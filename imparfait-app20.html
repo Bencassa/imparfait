@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Imparfait - Tutoriel Interactif</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        .bounce { animation: bounce 0.6s ease-in-out; }
+        .pulse { animation: pulse 0.6s ease-in-out; }
+        .confetti { animation: confetti 3s ease-out forwards; }
+        
+        .radical { color: #3B82F6; font-weight: 600; }
+        .ending { color: #EF4444; font-weight: 600; }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .badge {
+            transition: all 0.3s ease;
+        }
+        .badge:hover {
+            transform: scale(1.1);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(-10deg); }
+            75% { transform: translateY(-20px) rotate(10deg); }
+        }
+        
+        .dancing-person {
+            animation: dance 0.6s ease-in-out infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Modal de célébration
+        function CelebrationModal({ message, onClose }) {
+            if (!message) return null;
+            
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+                    <div className="bg-white rounded-3xl p-12 max-w-2xl mx-4 shadow-2xl slide-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center">
+                            <div className="text-8xl mb-6">🎉</div>
+                            <h2 className="text-4xl font-bold text-green-600 mb-6">
+                                Bravo !
+                            </h2>
+                            <p className="text-2xl text-slate-700 mb-8">
+                                {message}
+                            </p>
+                            <button
+                                onClick={onClose}
+                                className="px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl text-xl transition"
+                            >
+                                Continuer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Modal de félicitation FINALE avec score et animation
+        function FinalCelebrationModal({ score, onClose }) {
+            return (
+                <div className="fixed inset-0 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-3xl p-12 max-w-3xl mx-4 shadow-2xl slide-in">
+                        <div className="text-center">
+                            {/* Animation du personnage qui danse */}
+                            <div className="text-9xl mb-6 dancing-person">
+                                🕺
+                            </div>
+                            
+                            <h2 className="text-5xl font-bold text-purple-600 mb-6">
+                                C'est bien !
+                            </h2>
+                            
+                            <p className="text-3xl font-bold text-slate-800 mb-4">
+                                Tu as fini ce module sur l'imparfait
+                            </p>
+                            
+                            {/* Score total */}
+                            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-6 mb-6 shadow-lg">
+                                <p className="text-2xl font-bold text-white mb-2">Score total</p>
+                                <p className="text-6xl font-bold text-white">{score} points</p>
+                            </div>
+                            
+                            <p className="text-2xl text-slate-700 mb-8">
+                                Prochaine étape : <span className="font-bold text-blue-600">le passé composé !</span>
+                            </p>
+                            
+                            <button
+                                onClick={onClose}
+                                className="px-12 py-5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold rounded-xl text-2xl transition shadow-lg"
+                            >
+                                Terminer 🎉
+                            </button>
+                            
+                            <p className="text-slate-500 italic mt-8">par Benoit Cassagnau</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Messages d'encouragement à mi-parcours
+        const ENCOURAGEMENT_MESSAGES = [
+            "Bon début ! Mais attention, la suite est plus difficile...",
+            "Tu t'en sors bien jusqu'ici. Sauras-tu terminer sans faire d'erreur ?",
+            "Pas mal ! Mais garde ta concentration, le plus dur arrive...",
+            "C'est un bon score pour l'instant. Pourras-tu maintenir ce niveau ?",
+            "Bravo pour tes résultats jusqu'ici ! Prêt(e) à relever le défi jusqu'au bout ?",
+            "Tu progresses bien. Mais ne relâche pas ton effort maintenant !",
+            "Joli travail ! Montre-moi que tu peux aller jusqu'à la fin...",
+            "Ça se passe plutôt bien ! Attention à ne pas te relâcher dans la suite !"
+        ];
+
+        // Données de conjugaison
+        const VERBS_DATA = {
+            être: {
+                name: 'ÊTRE',
+                color: '#3B82F6',
+                present: 'nous sommes',
+                forms: [
+                    { pronoun: "j'", radical: 'ét', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'ét', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'ét', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'ét', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'ét', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'ét', ending: 'aient' }
+                ]
+            },
+            avoir: {
+                name: 'AVOIR',
+                color: '#10B981',
+                present: 'nous avons',
+                forms: [
+                    { pronoun: "j'", radical: 'av', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'av', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'av', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'av', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'av', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'av', ending: 'aient' }
+                ]
+            },
+            jouer: {
+                name: 'JOUER',
+                color: '#F59E0B',
+                present: 'nous jouons',
+                forms: [
+                    { pronoun: 'je', radical: 'jou', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'jou', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'jou', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'jou', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'jou', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'jou', ending: 'aient' }
+                ]
+            },
+            finir: {
+                name: 'FINIR',
+                color: '#8B5CF6',
+                present: 'nous finissons',
+                forms: [
+                    { pronoun: 'je', radical: 'finiss', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'finiss', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'finiss', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'finiss', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'finiss', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'finiss', ending: 'aient' }
+                ]
+            },
+            venir: {
+                name: 'VENIR',
+                color: '#EC4899',
+                present: 'nous venons',
+                forms: [
+                    { pronoun: 'je', radical: 'ven', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'ven', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'ven', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'ven', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'ven', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'ven', ending: 'aient' }
+                ]
+            },
+            boire: {
+                name: 'BOIRE',
+                color: '#06B6D4',
+                present: 'nous buvons',
+                forms: [
+                    { pronoun: 'je', radical: 'buv', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'buv', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'buv', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'buv', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'buv', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'buv', ending: 'aient' }
+                ]
+            }
+        };
+
+        // Exercices interactifs - Série 1 (après conjugaison basique)
+        const EXERCISES_SET1 = [
+            {
+                id: 'ex1',
+                type: 'qcm',
+                question: "Complétez : Nous _____ en hiver.",
+                options: ['étions', 'étais', 'était', 'étaient'],
+                correct: 'étions',
+                radical: 'ét',
+                ending: 'ions',
+                explanation: "À l'imparfait, 'nous' prend la terminaison -ions"
+            },
+            {
+                id: 'ex2',
+                type: 'qcm',
+                question: "Complétez : J'_____ mon écharpe.",
+                options: ['avais', 'avait', 'avions', 'avaient'],
+                correct: 'avais',
+                radical: 'av',
+                ending: 'ais',
+                explanation: "À l'imparfait, 'je' prend la terminaison -ais"
+            },
+            {
+                id: 'ex3',
+                type: 'qcm',
+                question: "Complétez : Les enfants _____ autour de nous.",
+                options: ['jouaient', 'jouais', 'jouait', 'jouions'],
+                correct: 'jouaient',
+                radical: 'jou',
+                ending: 'aient',
+                explanation: "À l'imparfait, 'ils/elles' prend la terminaison -aient"
+            },
+            {
+                id: 'ex4',
+                type: 'qcm',
+                question: "Complétez : Tu _____ très heureux.",
+                options: ['étais', 'était', 'étions', 'étaient'],
+                correct: 'étais',
+                radical: 'ét',
+                ending: 'ais',
+                explanation: "À l'imparfait, 'tu' prend la terminaison -ais"
+            },
+            {
+                id: 'ex5',
+                type: 'qcm',
+                question: "Complétez : Elle _____ un livre intéressant.",
+                options: ['avait', 'avais', 'avions', 'avaient'],
+                correct: 'avait',
+                radical: 'av',
+                ending: 'ait',
+                explanation: "À l'imparfait, 'il/elle' prend la terminaison -ait",
+                isMidpoint: true
+            },
+            {
+                id: 'ex6',
+                type: 'qcm',
+                question: "Complétez : Vous _____ au parc chaque jour.",
+                options: ['jouiez', 'jouais', 'jouait', 'jouaient'],
+                correct: 'jouiez',
+                radical: 'jou',
+                ending: 'iez',
+                explanation: "À l'imparfait, 'vous' prend la terminaison -iez"
+            },
+            {
+                id: 'ex7',
+                type: 'qcm',
+                question: "Complétez : Nous _____ toujours contents de vous voir.",
+                options: ['étions', 'étais', 'était', 'étaient'],
+                correct: 'étions',
+                radical: 'ét',
+                ending: 'ions',
+                explanation: "À l'imparfait, 'nous' prend la terminaison -ions"
+            },
+            {
+                id: 'ex8',
+                type: 'qcm',
+                question: "Complétez : Il _____ beaucoup d'amis.",
+                options: ['avait', 'avais', 'avions', 'aviez'],
+                correct: 'avait',
+                radical: 'av',
+                ending: 'ait',
+                explanation: "À l'imparfait, 'il/elle' prend la terminaison -ait"
+            },
+            {
+                id: 'ex9',
+                type: 'qcm',
+                question: "Complétez : Elles _____ souvent ensemble.",
+                options: ['jouaient', 'jouais', 'jouait', 'jouions'],
+                correct: 'jouaient',
+                radical: 'jou',
+                ending: 'aient',
+                explanation: "À l'imparfait, 'ils/elles' prend la terminaison -aient"
+            },
+            {
+                id: 'ex10',
+                type: 'qcm',
+                question: "Complétez : Vous _____ toujours raison.",
+                options: ['aviez', 'avais', 'avait', 'avaient'],
+                correct: 'aviez',
+                radical: 'av',
+                ending: 'iez',
+                explanation: "À l'imparfait, 'vous' prend la terminaison -iez",
+                isEndpoint: true
+            }
+        ];
+
+        // Exercices interactifs - Série 2 (radical)
+        const EXERCISES_SET2 = [
+            {
+                id: 'rad1',
+                type: 'input',
+                question: "Conjuguez PRÉPARER à l'imparfait avec 'je' :",
+                verb: 'préparer',
+                present: 'nous préparons',
+                radical: 'prépar',
+                ending: 'ais',
+                correct: 'Je préparais.',
+                hint: '1. Présent avec nous : préparons | 2. Enlever -ons : prépar | 3. Ajouter -ais'
+            },
+            {
+                id: 'rad2',
+                type: 'input',
+                question: "Conjuguez ATTENDRE à l'imparfait avec 'tu' :",
+                verb: 'attendre',
+                present: 'nous attendons',
+                radical: 'attend',
+                ending: 'ais',
+                correct: 'Tu attendais.',
+                hint: '1. Présent avec nous : attendons | 2. Enlever -ons : attend | 3. Ajouter -ais'
+            },
+            {
+                id: 'rad3',
+                type: 'input',
+                question: "Conjuguez BOIRE à l'imparfait avec 'je' :",
+                verb: 'boire',
+                present: 'nous buvons',
+                radical: 'buv',
+                ending: 'ais',
+                correct: 'Je buvais.',
+                hint: '1. Présent avec nous : buvons | 2. Enlever -ons : buv | 3. Ajouter -ais'
+            },
+            {
+                id: 'rad4',
+                type: 'input',
+                question: "Conjuguez VENIR à l'imparfait avec 'nous' :",
+                verb: 'venir',
+                present: 'nous venons',
+                radical: 'ven',
+                ending: 'ions',
+                correct: 'Nous venions.',
+                hint: '1. Présent avec nous : venons | 2. Enlever -ons : ven | 3. Ajouter -ions',
+                isMidpoint: true
+            },
+            {
+                id: 'rad5',
+                type: 'input',
+                question: "Conjuguez VENDRE à l'imparfait avec 'il' :",
+                verb: 'vendre',
+                present: 'nous vendons',
+                radical: 'vend',
+                ending: 'ait',
+                correct: 'Il vendait.',
+                hint: '1. Présent avec nous : vendons | 2. Enlever -ons : vend | 3. Ajouter -ait'
+            },
+            {
+                id: 'rad6',
+                type: 'input',
+                question: "Conjuguez PRENDRE à l'imparfait avec 'vous' :",
+                verb: 'prendre',
+                present: 'nous prenons',
+                radical: 'pren',
+                ending: 'iez',
+                correct: 'Vous preniez.',
+                hint: '1. Présent avec nous : prenons | 2. Enlever -ons : pren | 3. Ajouter -iez'
+            },
+            {
+                id: 'rad7',
+                type: 'input',
+                question: "Conjuguez FINIR à l'imparfait avec 'ils' :",
+                verb: 'finir',
+                present: 'nous finissons',
+                radical: 'finiss',
+                ending: 'aient',
+                correct: 'Ils finissaient.',
+                hint: '1. Présent avec nous : finissons | 2. Enlever -ons : finiss | 3. Ajouter -aient'
+            },
+            {
+                id: 'rad8',
+                type: 'input',
+                question: "Conjuguez PARTIR à l'imparfait avec 'elle' :",
+                verb: 'partir',
+                present: 'nous partons',
+                radical: 'part',
+                ending: 'ait',
+                correct: 'Elle partait.',
+                hint: '1. Présent avec nous : partons | 2. Enlever -ons : part | 3. Ajouter -ait',
+                isEndpoint: true
+            }
+        ];
+
+        // Exercice texte page 21
+        const EXERCISE_TEXT = {
+            text: "Chaque été, je fermais mon appartement, je laissais les clés à ma concierge pour qu'elle arrose les fleurs de temps en temps et je partais passer quelques semaines à la montagne. J'aimais beaucoup me ressourcer au calme. Je passais mon temps à faire des promenades, parfois de simples petites marches, parfois de belles randonnées. Je sortais avec mon appareil photo et photographiais la beauté de la nature. J'emportais toujours de quoi manger et quand la faim se faisait ressentir, je me cherchais un petit coin tranquille avec une belle vue et je déjeunais d'un peu de pain et de fromage. Je profitais de mes vacances pour me ressourcer, je lisais beaucoup, je marchais, je dormais beaucoup aussi. Bref, je ne me souciais de rien, j'appréciais le moment présent.",
+            verbs: [
+                { verb: 'fermais', infinitif: 'fermer' },
+                { verb: 'laissais', infinitif: 'laisser' },
+                { verb: 'partais', infinitif: 'partir' },
+                { verb: 'aimais', infinitif: 'aimer' },
+                { verb: 'passais', infinitif: 'passer' },
+                { verb: 'sortais', infinitif: 'sortir' },
+                { verb: 'photographiais', infinitif: 'photographier' },
+                { verb: 'emportais', infinitif: 'emporter' },
+                { verb: 'faisait', infinitif: 'faire' },
+                { verb: 'cherchais', infinitif: 'chercher' },
+                { verb: 'déjeunais', infinitif: 'déjeuner' },
+                { verb: 'profitais', infinitif: 'profiter' },
+                { verb: 'lisais', infinitif: 'lire' },
+                { verb: 'marchais', infinitif: 'marcher' },
+                { verb: 'dormais', infinitif: 'dormir' },
+                { verb: 'souciais', infinitif: 'se soucier' },
+                { verb: 'appréciais', infinitif: 'apprécier' }
+            ]
+        };
+
+        // Exercices page 23
+        const EXERCISES_PAGE23 = [
+            { sentence: "Marlyne (jouer) _____ avec son frère pendant que leurs parents regardaient la télévision.", verb: 'jouer', correct: 'jouait' },
+            { sentence: "Nous (aller) _____ à la mer chaque matin avec le club de plongée.", verb: 'aller', correct: 'allions' },
+            { sentence: "Je (revenir) _____ chaque jour en autobus.", verb: 'revenir', correct: 'revenais' },
+            { sentence: "Vous (être) _____ au bord des larmes en apprenant la nouvelle.", verb: 'être', correct: 'étiez' },
+            { sentence: "Tu (attendre) _____ cette promotion avec impatience.", verb: 'attendre', correct: 'attendais' },
+            { sentence: "Le jardin (paraître) _____ plus beau qu'avant.", verb: 'paraître', correct: 'paraissait' },
+            { sentence: "Le téléphone (sonner) _____ toutes les cinq minutes.", verb: 'sonner', correct: 'sonnait' },
+            { sentence: "Mon chien (faire) _____ des trous dans le sable et je riais.", verb: 'faire', correct: 'faisait' },
+            { sentence: "Mes parents (s'arrêter) _____ toujours à mi-chemin pour se reposer.", verb: "s'arrêter", correct: "s'arrêtaient" }
+        ];
+
+        // Exercices page 25
+        const EXERCISES_PAGE25 = [
+            { sentence: "En 1994, j' (habiter) _____ à Toulouse.", verb: 'habiter', correct: 'habitais' },
+            { sentence: "Tous les jours, elle lui (rendre) _____ visite.", verb: 'rendre', correct: 'rendait' },
+            { sentence: "Est-ce que tu (finir) _____ toujours à 18 heures ?", verb: 'finir', correct: 'finissais' },
+            { sentence: "Elle (prendre) _____ le bus tous les jours.", verb: 'prendre', correct: 'prenait' },
+            { sentence: "Ils (lire) _____ tous les matins les journaux.", verb: 'lire', correct: 'lisaient' },
+            { sentence: "Avant, il (être) _____ vraiment petit.", verb: 'être', correct: 'était' },
+            { sentence: "En Afrique, nous (boire) _____ beaucoup d'eau.", verb: 'boire', correct: 'buvions' },
+            { sentence: "Est-ce que tu (faire) _____ du sport régulièrement ?", verb: 'faire', correct: 'faisais' },
+            { sentence: "Pendant leur enfance, ils (aimer) _____ les bonbons.", verb: 'aimer', correct: 'aimaient' }
+        ];
+
+        // Composant principal
+        function ImparfaitApp() {
+            const [screen, setScreen] = useState('home');
+            const [currentSlide, setCurrentSlide] = useState(0);
+            const [showHelp, setShowHelp] = useState(false);
+            const [score, setScore] = useState(0);
+            const [combo, setCombo] = useState(0);
+            const [badges, setBadges] = useState([]);
+            const [currentExercise, setCurrentExercise] = useState(0);
+            const [userAnswer, setUserAnswer] = useState('');
+            const [feedback, setFeedback] = useState(null);
+            const [showConfetti, setShowConfetti] = useState(false);
+
+            const addBadge = (badge) => {
+                if (!badges.includes(badge.id)) {
+                    setBadges([...badges, badge.id]);
+                    setShowConfetti(true);
+                    setTimeout(() => setShowConfetti(false), 3000);
+                }
+            };
+
+            const checkCombo = (newCombo) => {
+                if (newCombo === 3 && !badges.includes('combo3')) {
+                    addBadge({ id: 'combo3', name: '🔥 3 d\'affilée !', color: 'orange' });
+                }
+                if (newCombo === 5 && !badges.includes('combo5')) {
+                    addBadge({ id: 'combo5', name: '⚡ En feu !', color: 'red' });
+                }
+            };
+
+            const handleAnswer = (answer, correct) => {
+                const isCorrect = answer.toLowerCase().trim() === correct.toLowerCase().trim();
+                
+                if (isCorrect) {
+                    const newCombo = combo + 1;
+                    setCombo(newCombo);
+                    setScore(score + 10 + (newCombo * 5));
+                    setFeedback({ type: 'success', message: '✅ Excellent !' });
+                    checkCombo(newCombo);
+                } else {
+                    setCombo(0);
+                    setFeedback({ 
+                        type: 'error', 
+                        message: `❌ Incorrect. La réponse était : ${correct}` 
+                    });
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+                    {showConfetti && <Confetti />}
+                    
+                    {screen === 'home' && (
+                        <HomeScreen 
+                            onStart={() => setScreen('tutorial')}
+                            onTableau={() => setScreen('tableau')}
+                            onPractice={() => setScreen('practice')}
+                        />
+                    )}
+                    
+                    {screen === 'tutorial' && (
+                        <TutorialScreen 
+                            currentSlide={currentSlide}
+                            setCurrentSlide={setCurrentSlide}
+                            showHelp={showHelp}
+                            setShowHelp={setShowHelp}
+                            score={score}
+                            combo={combo}
+                            badges={badges}
+                            onBack={() => setScreen('home')}
+                            handleAnswer={handleAnswer}
+                            feedback={feedback}
+                            setFeedback={setFeedback}
+                            userAnswer={userAnswer}
+                            setUserAnswer={setUserAnswer}
+                        />
+                    )}
+                    
+                    {screen === 'practice' && (
+                        <PracticeScreen onBack={() => setScreen('home')} score={score} />
+                    )}
+                    
+                    {screen === 'tableau' && (
+                        <TableauScreen onBack={() => setScreen('home')} />
+                    )}
+                </div>
+            );
+        }
+
+        // Écran "Un peu de pratique"
+        function PracticeScreen({ onBack, score }) {
+            const [currentExercise, setCurrentExercise] = useState(0);
+            const [completedExercises, setCompletedExercises] = useState({});
+            const [showFinalModal, setShowFinalModal] = useState(false);
+
+            const markExerciseComplete = (exerciseId) => {
+                const newCompleted = { ...completedExercises, [exerciseId]: true };
+                setCompletedExercises(newCompleted);
+                
+                // Vérifier si tous les exercices sont terminés
+                if (Object.keys(newCompleted).length === 3) {
+                    setTimeout(() => {
+                        setShowFinalModal(true);
+                    }, 1000);
+                }
+            };
+
+            const exercises = [
+                {
+                    id: 'text',
+                    title: '📖 Texte à analyser',
+                    component: (
+                        <TextInfinitifExercise 
+                            text={EXERCISE_TEXT.text}
+                            verbs={EXERCISE_TEXT.verbs}
+                            onComplete={() => markExerciseComplete('text')}
+                        />
+                    )
+                },
+                {
+                    id: 'fill1',
+                    title: '✏️ Exercices - Série 1',
+                    component: (
+                        <FillInExercise 
+                            exercises={EXERCISES_PAGE23}
+                            title="Complétez les phrases avec les verbes à l'imparfait"
+                            onComplete={() => markExerciseComplete('fill1')}
+                        />
+                    )
+                },
+                {
+                    id: 'fill2',
+                    title: '✏️ Exercices - Série 2',
+                    component: (
+                        <FillInExercise 
+                            exercises={EXERCISES_PAGE25}
+                            title="Complétez les phrases avec les verbes à l'imparfait"
+                            onComplete={() => markExerciseComplete('fill2')}
+                        />
+                    )
+                }
+            ];
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="mb-6">
+                            <button 
+                                onClick={onBack}
+                                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition"
+                            >
+                                ← Retour
+                            </button>
+                        </div>
+
+                        <h1 className="text-4xl font-bold text-slate-800 mb-8 text-center">
+                            Un peu de pratique
+                        </h1>
+
+                        {/* Menu de sélection */}
+                        <div className="flex flex-wrap gap-3 mb-8 justify-center">
+                            {exercises.map((ex, idx) => (
+                                <button
+                                    key={ex.id}
+                                    onClick={() => setCurrentExercise(idx)}
+                                    className={`px-6 py-3 rounded-lg font-semibold transition ${
+                                        currentExercise === idx
+                                            ? 'bg-purple-500 text-white'
+                                            : 'bg-white border-2 border-purple-200 hover:border-purple-400'
+                                    }`}
+                                >
+                                    {ex.title}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Exercice actuel */}
+                        <div className="bg-white rounded-2xl shadow-xl p-8 slide-in">
+                            {exercises[currentExercise].component}
+                        </div>
+                        
+                        {/* Modal final */}
+                        {showFinalModal && (
+                            <FinalCelebrationModal 
+                                score={score}
+                                onClose={onBack}
+                            />
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Écran d'accueil
+        function HomeScreen({ onStart, onTableau, onPractice }) {
+            return (
+                <div className="min-h-screen flex items-center justify-center p-8">
+                    <div className="max-w-5xl w-full slide-in">
+                        <div className="text-center mb-12">
+                            <h1 className="text-6xl font-bold text-slate-800 mb-4">
+                                L'Imparfait
+                            </h1>
+                            <p className="text-2xl text-slate-600">
+                                La description dans le passé
+                            </p>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <button 
+                                onClick={onStart}
+                                className="card-hover bg-white p-8 rounded-2xl shadow-lg border-2 border-blue-200 hover:border-blue-400"
+                            >
+                                <div className="text-5xl mb-4">📚</div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Tutoriel</h2>
+                                <p className="text-slate-600">Apprendre pas à pas</p>
+                            </button>
+                            
+                            <button 
+                                onClick={onPractice}
+                                className="card-hover bg-white p-8 rounded-2xl shadow-lg border-2 border-purple-200 hover:border-purple-400"
+                            >
+                                <div className="text-5xl mb-4">✏️</div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Un peu de pratique</h2>
+                                <p className="text-slate-600">Exercices supplémentaires</p>
+                            </button>
+                            
+                            <button 
+                                onClick={onTableau}
+                                className="card-hover bg-white p-8 rounded-2xl shadow-lg border-2 border-green-200 hover:border-green-400"
+                            >
+                                <div className="text-5xl mb-4">📊</div>
+                                <h2 className="text-2xl font-bold text-slate-800 mb-2">Tableau</h2>
+                                <p className="text-slate-600">Résumé de la conjugaison</p>
+                            </button>
+                        </div>
+                        
+                        <div className="text-center mt-12">
+                            <p className="text-slate-500 italic">par Benoit Cassagnau</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Tutoriel principal
+        function TutorialScreen({ 
+            currentSlide, 
+            setCurrentSlide, 
+            showHelp, 
+            setShowHelp,
+            score,
+            combo,
+            badges,
+            onBack,
+            handleAnswer,
+            feedback,
+            setFeedback,
+            userAnswer,
+            setUserAnswer
+        }) {
+            const slides = [
+                // Slide 1: Intro
+                {
+                    type: 'intro',
+                    content: (
+                        <div className="text-center">
+                            <h2 className="text-4xl font-bold text-slate-800 mb-6">
+                                Commençons par une situation concrète
+                            </h2>
+                            <div className="bg-blue-50 p-8 rounded-xl border-2 border-blue-200">
+                                <p className="text-xl text-slate-700 leading-relaxed">
+                                    Nous <span className="radical">ét</span><span className="ending">ions</span> en hiver. 
+                                    Il <span className="radical">fais</span><span className="ending">ait</span> froid, 
+                                    donc j'<span className="radical">av</span><span className="ending">ais</span> mon écharpe. 
+                                    Vous <span className="radical">ét</span><span className="ending">iez</span> de bonne humeur 
+                                    car il y <span className="radical">av</span><span className="ending">ait</span> de la neige. 
+                                    Les enfants <span className="radical">jou</span><span className="ending">aient</span> autour de nous.
+                                </p>
+                            </div>
+                        </div>
+                    ),
+                    help: "L'imparfait décrit des actions dans le passé qui durent ou se répètent."
+                },
+                
+                // Slide 2: Usage de l'imparfait
+                {
+                    type: 'theory',
+                    content: (
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-6">À quoi sert l'imparfait ?</h2>
+                            <div className="space-y-4">
+                                <div className="bg-green-50 p-6 rounded-xl border-l-4 border-green-500">
+                                    <h3 className="font-bold text-lg mb-3">📸 Pour une description (choses qui durent)</h3>
+                                    <div className="space-y-2 text-lg">
+                                        <p>Il y <span className="radical">av</span><span className="ending">ait</span> du soleil. Les rues <span className="radical">ét</span><span className="ending">aient</span> pleines de gens.</p>
+                                        <p>J'<span className="radical">aim</span><span className="ending">ais</span> cette chambre qui <span className="radical">av</span><span className="ending">ait</span> beaucoup de lumière.</p>
+                                    </div>
+                                </div>
+                                <div className="bg-blue-50 p-6 rounded-xl border-l-4 border-blue-500">
+                                    <h3 className="font-bold text-lg mb-3">🔄 Pour une habitude (choses qui se répètent)</h3>
+                                    <div className="space-y-2 text-lg">
+                                        <p>Quand j'<span className="radical">habit</span><span className="ending">ais</span> à Paris, je me <span className="radical">lev</span><span className="ending">ais</span> tous les jours à 7 heures.</p>
+                                        <p>Normalement, le samedi, nous <span className="radical">all</span><span className="ending">ions</span> au cinéma.</p>
+                                        <p>Avant, elle <span className="radical">lis</span><span className="ending">ait</span> un livre chaque semaine.</p>
+                                        <p>Tous les étés, mes parents <span className="radical">lou</span><span className="ending">aient</span> une maison à la mer.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    help: "L'imparfait exprime une durée ou une répétition dans le passé."
+                },
+                
+                // Slide 3: Formation
+                {
+                    type: 'conjugation',
+                    content: (
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-6">La formation est simple !</h2>
+                            <div className="bg-white p-8 rounded-xl shadow-lg">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div>
+                                        <h3 className="font-bold text-xl mb-4 text-blue-600">Terminaisons</h3>
+                                        <div className="space-y-2 text-lg">
+                                            <div>je → <span className="ending">-ais</span></div>
+                                            <div>tu → <span className="ending">-ais</span></div>
+                                            <div>il/elle → <span className="ending">-ait</span></div>
+                                            <div>nous → <span className="ending">-ions</span></div>
+                                            <div>vous → <span className="ending">-iez</span></div>
+                                            <div>ils/elles → <span className="ending">-aient</span></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-xl mb-4 text-green-600">Exemple : JOUER</h3>
+                                        <div className="space-y-2 text-lg">
+                                            <div>je <span className="radical">jou</span><span className="ending">ais</span></div>
+                                            <div>tu <span className="radical">jou</span><span className="ending">ais</span></div>
+                                            <div>il <span className="radical">jou</span><span className="ending">ait</span></div>
+                                            <div>nous <span className="radical">jou</span><span className="ending">ions</span></div>
+                                            <div>vous <span className="radical">jou</span><span className="ending">iez</span></div>
+                                            <div>ils <span className="radical">jou</span><span className="ending">aient</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    help: "Le radical reste toujours le même. Seule la terminaison change !"
+                },
+                
+                // Slides 4-13: 10 exercices série 1
+                ...EXERCISES_SET1.map((ex, idx) => ({
+                    type: 'exercise',
+                    exercise: ex,
+                    help: ex.explanation
+                })),
+                
+                // Slide 15: Comment trouver le radical (APRÈS l'activité texte)
+                {
+                    type: 'radical',
+                    content: (
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-6">
+                                Comment trouver le radical ?
+                            </h2>
+                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-8 rounded-xl border-2 border-blue-200">
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-blue-600 text-xl">1</div>
+                                        <p className="text-lg">Conjuguer au présent avec <strong>nous</strong></p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-blue-600 text-xl">2</div>
+                                        <p className="text-lg">Enlever <strong>-ons</strong></p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-green-600 text-xl">✓</div>
+                                        <p className="text-lg">Vous avez le radical !</p>
+                                    </div>
+                                </div>
+                                <div className="mt-8 space-y-4">
+                                    <div className="bg-white p-4 rounded-lg">
+                                        <p className="font-bold mb-2">BOIRE :</p>
+                                        <p className="text-lg">PRÉSENT : nous <span className="radical">buv</span><span className="ending">ons</span> → radical : <span className="radical">buv</span></p>
+                                        <p className="text-lg">IMPARFAIT : je <span className="radical">buv</span><span className="ending">ais</span>, nous <span className="radical">buv</span><span className="ending">ions</span></p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg">
+                                        <p className="font-bold mb-2">CONNAÎTRE :</p>
+                                        <p className="text-lg">PRÉSENT : nous <span className="radical">connaiss</span><span className="ending">ons</span> → radical : <span className="radical">connaiss</span></p>
+                                        <p className="text-lg">IMPARFAIT : je <span className="radical">connaiss</span><span className="ending">ais</span>, nous <span className="radical">connaiss</span><span className="ending">ions</span></p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg">
+                                        <p className="font-bold mb-2">VOIR :</p>
+                                        <p className="text-lg">PRÉSENT : nous <span className="radical">voy</span><span className="ending">ons</span> → radical : <span className="radical">voy</span></p>
+                                        <p className="text-lg">IMPARFAIT : je <span className="radical">voy</span><span className="ending">ais</span>, nous <span className="radical">voy</span><span className="ending">ions</span></p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-lg">
+                                        <p className="font-bold mb-2">FINIR :</p>
+                                        <p className="text-lg">PRÉSENT : nous <span className="radical">finiss</span><span className="ending">ons</span> → radical : <span className="radical">finiss</span></p>
+                                        <p className="text-lg">IMPARFAIT : je <span className="radical">finiss</span><span className="ending">ais</span>, nous <span className="radical">finiss</span><span className="ending">ions</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    help: "Cette règle fonctionne pour TOUS les verbes (sauf être) !"
+                },
+                
+                // Slides 16-23: 8 exercices série 2 (radical)
+                ...EXERCISES_SET2.map((ex, idx) => ({
+                    type: 'exercise',
+                    exercise: ex,
+                    help: ex.hint
+                })),
+                
+                // Slide 24: Cas particulier ÊTRE
+                {
+                    type: 'special',
+                    content: (
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-6">
+                                ⚠️ Le cas particulier : ÊTRE
+                            </h2>
+                            <div className="bg-yellow-50 p-8 rounded-xl border-2 border-yellow-300">
+                                <p className="text-lg mb-6">
+                                    Au présent : nous <strong>sommes</strong> (pas de -ons !)
+                                </p>
+                                <p className="text-lg mb-6">
+                                    Le radical est donc arbitraire : <span className="radical">ét</span>
+                                </p>
+                                <div className="bg-white p-6 rounded-lg">
+                                    <div className="space-y-2 text-lg">
+                                        <div>j'<span className="radical">ét</span><span className="ending">ais</span></div>
+                                        <div>tu <span className="radical">ét</span><span className="ending">ais</span></div>
+                                        <div>il <span className="radical">ét</span><span className="ending">ait</span></div>
+                                        <div>nous <span className="radical">ét</span><span className="ending">ions</span></div>
+                                        <div>vous <span className="radical">ét</span><span className="ending">iez</span></div>
+                                        <div>ils <span className="radical">ét</span><span className="ending">aient</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    help: "ÊTRE est le seul verbe irrégulier à l'imparfait !"
+                },
+                
+                // Slide 25: Verbes en -ger et -cer (diapo 18)
+                {
+                    type: 'special',
+                    content: (
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-6">
+                                ⚠️ Attention aux verbes en -GER et -CER
+                            </h2>
+                            <div className="space-y-6">
+                                <div className="bg-orange-50 p-6 rounded-xl border-2 border-orange-300">
+                                    <h3 className="font-bold text-xl mb-4">Verbes en -GER (manger, nager...)</h3>
+                                    <p className="text-lg mb-4">Au présent : nous <span className="radical">mange</span><span className="ending">ons</span></p>
+                                    <p className="text-lg mb-4">À l'imparfait, on garde le <strong>E</strong> :</p>
+                                    <div className="bg-white p-4 rounded-lg space-y-2">
+                                        <div className="text-lg">Je <span className="radical">mang<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>e</span></span><span className="ending">ais</span></div>
+                                        <div className="text-lg">Tu <span className="radical">mang<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>e</span></span><span className="ending">ais</span></div>
+                                        <div className="text-lg">Il <span className="radical">mang<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>e</span></span><span className="ending">ait</span></div>
+                                        <div className="text-lg">Nous <span className="radical">mang</span><span className="ending">ions</span></div>
+                                        <div className="text-lg">Vous <span className="radical">mang</span><span className="ending">iez</span></div>
+                                        <div className="text-lg">Ils <span className="radical">mang<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>e</span></span><span className="ending">aient</span></div>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-300">
+                                    <h3 className="font-bold text-xl mb-4">Verbes en -CER (lancer, commencer...)</h3>
+                                    <p className="text-lg mb-4">Au présent : nous <span className="radical">lanç</span><span className="ending">ons</span></p>
+                                    <p className="text-lg mb-4">À l'imparfait, on garde la <strong>CÉDILLE (ç)</strong> :</p>
+                                    <div className="bg-white p-4 rounded-lg space-y-2">
+                                        <div className="text-lg">Je <span className="radical">lan<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>ç</span></span><span className="ending">ais</span></div>
+                                        <div className="text-lg">Tu <span className="radical">lan<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>ç</span></span><span className="ending">ais</span></div>
+                                        <div className="text-lg">Il <span className="radical">lan<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>ç</span></span><span className="ending">ait</span></div>
+                                        <div className="text-lg">Nous <span className="radical">lanc</span><span className="ending">ions</span></div>
+                                        <div className="text-lg">Vous <span className="radical">lanc</span><span className="ending">iez</span></div>
+                                        <div className="text-lg">Ils <span className="radical">lan<span style={{backgroundColor: '#FEF08A', fontWeight: 'bold'}}>ç</span></span><span className="ending">aient</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    help: "On garde le E ou la cédille pour conserver le son !"
+                },
+                
+                // Slide 25b: Exercices -GER/-CER
+                {
+                    type: 'fill-exercise',
+                    content: (
+                        <FillInExercise 
+                            exercises={[
+                                { sentence: "Tu _____ (manger) toujours à la cantine.", verb: 'manger', correct: 'mangeais' },
+                                { sentence: "Nous _____ (nager) tous les matins à la piscine.", verb: 'nager', correct: 'nagions' },
+                                { sentence: "Ils _____ (voyager) souvent en train.", verb: 'voyager', correct: 'voyageaient' },
+                                { sentence: "Je _____ (commencer) mes devoirs à 18h.", verb: 'commencer', correct: 'commençais' },
+                                { sentence: "Vous _____ (lancer) le ballon très loin.", verb: 'lancer', correct: 'lanciez' },
+                                { sentence: "Elle _____ (avancer) doucement dans la neige.", verb: 'avancer', correct: 'avançait' }
+                            ]}
+                            title="Pratiquez avec les verbes en -GER et -CER"
+                        />
+                    ),
+                    help: "N'oubliez pas le E pour -GER et la cédille pour -CER !"
+                },
+                
+                // Slide 26: Attention -AIS (diapo 19)
+                {
+                    type: 'special',
+                    content: (
+                        <div>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-6">
+                                ⚠️ Attention ! Ne confondez pas présent et imparfait
+                            </h2>
+                            <div className="bg-red-50 p-8 rounded-xl border-2 border-red-300">
+                                <p className="text-lg mb-6">
+                                    La terminaison <span className="ending">-AIS</span> est typique de l'imparfait avec JE et TU,
+                                    mais certains verbes se terminent aussi par -AIS au présent !
+                                </p>
+                                
+                                <div className="space-y-6">
+                                    <div className="bg-white p-6 rounded-lg">
+                                        <h3 className="font-bold text-lg mb-3">CONNAÎTRE</h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="font-semibold mb-2">Présent :</p>
+                                                <p>Je conn<span className="ending">ais</span></p>
+                                                <p>Nous <span className="radical">connaiss</span><span className="ending">ons</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold mb-2">Imparfait :</p>
+                                                <p>Je <span className="radical">connaiss</span><span className="ending">ais</span></p>
+                                                <p>Nous <span className="radical">connaiss</span><span className="ending">ions</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-white p-6 rounded-lg">
+                                        <h3 className="font-bold text-lg mb-3">SAVOIR</h3>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="font-semibold mb-2">Présent :</p>
+                                                <p>Je s<span className="ending">ais</span></p>
+                                                <p>Nous <span className="radical">sav</span><span className="ending">ons</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold mb-2">Imparfait :</p>
+                                                <p>Je <span className="radical">sav</span><span className="ending">ais</span></p>
+                                                <p>Nous <span className="radical">sav</span><span className="ending">ions</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    help: "Regardez bien le contexte et le radical pour distinguer présent et imparfait !"
+                },
+                
+                // Slide 27: Drag & Drop terminaisons
+                {
+                    type: 'exercise',
+                    exercise: {
+                        id: 'drag1',
+                        type: 'drag',
+                        question: "Associez les pronoms avec les bonnes terminaisons :",
+                        pairs: [
+                            { pronoun: 'je', ending: '-ais', uniqueId: 'je-ais' },
+                            { pronoun: 'tu', ending: '-ais', uniqueId: 'tu-ais' },
+                            { pronoun: 'il/elle', ending: '-ait', uniqueId: 'il-ait' },
+                            { pronoun: 'nous', ending: '-ions', uniqueId: 'nous-ions' },
+                            { pronoun: 'vous', ending: '-iez', uniqueId: 'vous-iez' },
+                            { pronoun: 'ils/elles', ending: '-aient', uniqueId: 'ils-aient' }
+                        ]
+                    },
+                    help: "Glissez les terminaisons vers les bons pronoms"
+                },
+                
+                // Slide 28: Completion
+                {
+                    type: 'completion',
+                    content: (
+                        <div className="text-center">
+                            <div className="text-6xl mb-6">🎉</div>
+                            <h2 className="text-4xl font-bold text-slate-800 mb-4">
+                                Félicitations !
+                            </h2>
+                            <p className="text-xl text-slate-600 mb-8">
+                                Tu as terminé le tutoriel sur l'imparfait !
+                            </p>
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-8 rounded-xl">
+                                <p className="text-2xl font-bold mb-2">Score final : {score} points</p>
+                                <p className="text-lg">Badges obtenus : {badges.length}</p>
+                            </div>
+                        </div>
+                    )
+                }
+            ];
+
+            const currentSlideData = slides[currentSlide];
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    {/* Header avec score */}
+                    <div className="max-w-6xl mx-auto mb-6">
+                        <div className="bg-white rounded-xl shadow-lg p-4 flex items-center justify-between">
+                            <button 
+                                onClick={onBack}
+                                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition"
+                            >
+                                ← Retour
+                            </button>
+                            
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl">⭐</span>
+                                    <span className="font-bold text-xl">{score}</span>
+                                </div>
+                                {combo > 0 && (
+                                    <div className="flex items-center gap-2 pulse">
+                                        <span className="text-2xl">🔥</span>
+                                        <span className="font-bold text-xl text-orange-500">{combo}</span>
+                                    </div>
+                                )}
+                                <div className="flex gap-2">
+                                    {badges.map(badge => (
+                                        <span key={badge} className="badge text-2xl">
+                                            {badge === 'combo3' ? '🔥' : badge === 'combo5' ? '⚡' : '🏆'}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <button 
+                                onClick={() => setShowHelp(!showHelp)}
+                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
+                            >
+                                💡 Aide
+                            </button>
+                        </div>
+                        
+                        {/* Progress bar */}
+                        <div className="mt-4 bg-slate-200 rounded-full h-2">
+                            <div 
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(currentSlide / (slides.length - 1)) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Help panel */}
+                    {showHelp && currentSlideData.help && (
+                        <div className="max-w-6xl mx-auto mb-6 slide-in">
+                            <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
+                                <p className="text-lg text-slate-700">💡 {currentSlideData.help}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Main content */}
+                    <div className="max-w-6xl mx-auto slide-in">
+                        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
+                            {currentSlideData.type === 'exercise' ? (
+                                <ExerciseSlide 
+                                    exercise={currentSlideData.exercise}
+                                    handleAnswer={handleAnswer}
+                                    feedback={feedback}
+                                    setFeedback={setFeedback}
+                                    userAnswer={userAnswer}
+                                    setUserAnswer={setUserAnswer}
+                                />
+                            ) : (
+                                currentSlideData.content
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="max-w-6xl mx-auto mt-6 flex justify-between">
+                        <button 
+                            onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
+                            disabled={currentSlide === 0}
+                            className="px-6 py-3 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition font-semibold"
+                        >
+                            ← Précédent
+                        </button>
+                        
+                        <span className="text-slate-600 font-medium">
+                            {currentSlide + 1} / {slides.length}
+                        </span>
+                        
+                        <button 
+                            onClick={() => {
+                                setFeedback(null);
+                                setUserAnswer('');
+                                setCurrentSlide(Math.min(slides.length - 1, currentSlide + 1));
+                            }}
+                            disabled={currentSlide === slides.length - 1}
+                            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition font-semibold"
+                        >
+                            Suivant →
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Composant exercice
+        function ExerciseSlide({ exercise, handleAnswer, feedback, setFeedback, userAnswer, setUserAnswer }) {
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [attemptCount, setAttemptCount] = useState(0);
+            const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+            const [celebrationMessage, setCelebrationMessage] = useState('');
+
+            const onSubmit = () => {
+                if (exercise.type === 'qcm' && selectedOption) {
+                    const isCorrect = selectedOption === exercise.correct;
+                    if (isCorrect) {
+                        handleAnswer(selectedOption, exercise.correct);
+                        
+                        // Si c'est à mi-parcours OU à la fin, afficher le modal avec un message aléatoire
+                        if (exercise.isMidpoint || exercise.isEndpoint) {
+                            const randomMsg = ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
+                            setCelebrationMessage(randomMsg);
+                            setShowCelebrationModal(true);
+                        }
+                        
+                        setFeedback({
+                            type: 'success',
+                            message: '✅ Excellent !',
+                            detail: exercise.explanation ? (
+                                <div className="mt-4 bg-green-100 p-4 rounded-lg">
+                                    <p className="mb-2">{exercise.explanation} :</p>
+                                    <p className="text-xl">
+                                        <span className="radical">{exercise.radical}</span>
+                                        <span className="ending"> + {exercise.ending}</span>
+                                        {' = '}
+                                        <span className="radical">{exercise.radical}</span>
+                                        <span className="ending">{exercise.ending}</span>
+                                    </p>
+                                </div>
+                            ) : null
+                        });
+                    } else {
+                        // Pas de réponse correcte affichée, juste réessayer
+                        setFeedback({
+                            type: 'error',
+                            message: '❌ Incorrect. Réessayez !',
+                            detail: null
+                        });
+                        setSelectedOption(null); // Reset pour réessayer
+                    }
+                } else if (exercise.type === 'input' && userAnswer) {
+                    // Vérifier le format (après trim pour ignorer les espaces)
+                    const trimmedAnswer = userAnswer.trim();
+                    const hasCapital = trimmedAnswer[0] === trimmedAnswer[0].toUpperCase();
+                    const hasPeriod = trimmedAnswer.endsWith('.');
+                    
+                    if (!hasCapital || !hasPeriod) {
+                        let message = '⚠️ ';
+                        if (!hasCapital && !hasPeriod) {
+                            message += 'Il manque la majuscule et le point.';
+                        } else if (!hasCapital) {
+                            message += 'Il manque la majuscule.';
+                        } else {
+                            message += 'Il manque le point.';
+                        }
+                        message += ' En français, une phrase commence par une majuscule et termine par un point.';
+                        
+                        setFeedback({
+                            type: 'warning',
+                            message: message,
+                            detail: null
+                        });
+                        return;
+                    }
+                    
+                    // Vérifier avec le format exact
+                    const isCorrect = trimmedAnswer === exercise.correct;
+                    if (isCorrect) {
+                        handleAnswer(userAnswer, exercise.correct);
+                        
+                        // Si c'est à mi-parcours OU à la fin, afficher le modal avec un message aléatoire
+                        if (exercise.isMidpoint || exercise.isEndpoint) {
+                            const randomMsg = ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
+                            setCelebrationMessage(randomMsg);
+                            setShowCelebrationModal(true);
+                        }
+                        
+                        setFeedback({
+                            type: 'success',
+                            message: '✅ Excellent !',
+                            detail: exercise.hint ? (
+                                <div className="mt-4 bg-green-100 p-4 rounded-lg">
+                                    <p className="font-semibold mb-2">📝 Démarche :</p>
+                                    <div className="space-y-1">
+                                        <p>1. Présent avec <span style={{color: '#000'}}>nous</span> : <span className="radical">{exercise.present.split('ons')[0]}</span><span className="ending">ons</span></p>
+                                        <p>2. Enlever -ons : <span className="radical">{exercise.radical}</span></p>
+                                        <p>3. Ajouter <span className="ending">-{exercise.ending}</span></p>
+                                        <p className="text-xl mt-2">
+                                            → {exercise.correct.split(' ')[0]} <span className="radical">{exercise.radical}</span><span className="ending">{exercise.ending}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : null
+                        });
+                        setAttemptCount(0);
+                    } else {
+                        // Première erreur : donner une deuxième chance
+                        if (attemptCount === 0) {
+                            setFeedback({
+                                type: 'error',
+                                message: '❌ Incorrect. Réessayez !',
+                                detail: null
+                            });
+                            setAttemptCount(1);
+                        } else {
+                            // Deuxième erreur : donner la réponse et la démarche
+                            handleAnswer(userAnswer, exercise.correct);
+                            setFeedback({
+                                type: 'error',
+                                message: `❌ La réponse attendue était : ${exercise.correct}`,
+                                detail: exercise.hint ? (
+                                    <div className="mt-4 bg-red-100 p-4 rounded-lg">
+                                        <p className="font-semibold mb-2">📝 Rappel de la démarche :</p>
+                                        <div className="space-y-1">
+                                            <p>1. Présent avec <span style={{color: '#000'}}>nous</span> : <span className="radical">{exercise.present.split('ons')[0]}</span><span className="ending">ons</span></p>
+                                            <p>2. Enlever -ons : <span className="radical">{exercise.radical}</span></p>
+                                            <p>3. Ajouter <span className="ending">-{exercise.ending}</span></p>
+                                        </div>
+                                    </div>
+                                ) : null
+                            });
+                            setAttemptCount(0);
+                        }
+                    }
+                    return;
+                }
+            };
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold text-slate-800 mb-8">
+                        {exercise.question}
+                    </h2>
+
+                    {exercise.type === 'qcm' && (
+                        <div className="space-y-4 mb-8">
+                            {exercise.options.map(option => (
+                                <button
+                                    key={option}
+                                    onClick={() => {
+                                        setSelectedOption(option);
+                                        setFeedback(null);
+                                    }}
+                                    disabled={feedback?.type === 'success'}
+                                    className={`w-full p-4 rounded-xl border-2 text-left text-lg transition ${
+                                        selectedOption === option 
+                                            ? 'border-blue-500 bg-blue-50' 
+                                            : 'border-slate-200 hover:border-blue-300'
+                                    } ${feedback?.type === 'success' ? 'cursor-not-allowed opacity-50' : ''}`}
+                                >
+                                    {option}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {exercise.type === 'input' && (
+                        <div className="mb-8">
+                            <input
+                                type="text"
+                                value={userAnswer}
+                                onChange={(e) => {
+                                    setUserAnswer(e.target.value);
+                                    setFeedback(null);
+                                }}
+                                className="w-full p-4 border-2 border-slate-300 rounded-xl text-lg focus:border-blue-500 focus:outline-none"
+                                placeholder="Exemple : Je mangeais."
+                            />
+                            <p className="text-sm text-slate-500 mt-2">
+                                N'oubliez pas la majuscule et le point final !
+                            </p>
+                        </div>
+                    )}
+
+                    {exercise.type === 'drag' && (
+                        <DragDropExercise exercise={exercise} handleAnswer={handleAnswer} />
+                    )}
+
+                    {feedback && (
+                        <div className={`p-6 rounded-xl mb-6 ${
+                            feedback.type === 'success' ? 'bg-green-50 border-2 border-green-500' : 
+                            feedback.type === 'warning' ? 'bg-yellow-50 border-2 border-yellow-500' :
+                            'bg-red-50 border-2 border-red-500'
+                        }`}>
+                            <p className="text-lg font-semibold">{feedback.message}</p>
+                            {feedback.detail && <div>{feedback.detail}</div>}
+                        </div>
+                    )}
+
+                    {(exercise.type === 'qcm' || exercise.type === 'input') && (
+                        <button
+                            onClick={onSubmit}
+                            disabled={(!selectedOption && !userAnswer) || (feedback?.type === 'success')}
+                            className="w-full py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white font-bold rounded-xl text-lg transition"
+                        >
+                            {feedback?.type === 'success' ? 'Réponse validée ✓' : 'Vérifier'}
+                        </button>
+                    )}
+                    
+                    {showCelebrationModal && (
+                        <CelebrationModal 
+                            message={celebrationMessage}
+                            onClose={() => setShowCelebrationModal(false)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Drag & Drop Exercise amélioré avec vrai drag & drop et mélange
+        function DragDropExercise({ exercise, handleAnswer }) {
+            const [matches, setMatches] = useState({});
+            const [draggedItem, setDraggedItem] = useState(null);
+            const [shuffledPairs, setShuffledPairs] = useState([]);
+
+            // Mélanger les paires au montage
+            useEffect(() => {
+                const shuffled = [...exercise.pairs].sort(() => Math.random() - 0.5);
+                setShuffledPairs(shuffled);
+            }, []);
+
+            const handleDragStart = (e, pair) => {
+                setDraggedItem(pair);
+                e.dataTransfer.effectAllowed = 'move';
+            };
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            };
+
+            const handleDrop = (e, pronoun) => {
+                e.preventDefault();
+                if (draggedItem) {
+                    const newMatches = { ...matches };
+                    
+                    // Enlever l'item de son ancienne position si elle existe
+                    Object.keys(newMatches).forEach(key => {
+                        if (newMatches[key] === draggedItem.uniqueId) delete newMatches[key];
+                    });
+                    
+                    newMatches[pronoun] = draggedItem.uniqueId;
+                    setMatches(newMatches);
+                    setDraggedItem(null);
+                }
+            };
+
+            const removeMatch = (pronoun) => {
+                const newMatches = { ...matches };
+                delete newMatches[pronoun];
+                setMatches(newMatches);
+            };
+
+            const checkAnswers = () => {
+                // Vérifier que tous les pronoms ont une terminaison
+                if (!allPaired) {
+                    return;
+                }
+                
+                // Vérifier que chaque pronom a SA bonne terminaison (son uniqueId)
+                let allCorrect = true;
+                for (const pair of exercise.pairs) {
+                    if (matches[pair.pronoun] !== pair.uniqueId) {
+                        allCorrect = false;
+                        break;
+                    }
+                }
+                
+                if (allCorrect) {
+                    // Afficher le message de succès dans une popup
+                    alert('🎉 Bravo ! Toutes les associations sont correctes !');
+                    handleAnswer('correct', 'correct');
+                } else {
+                    alert('❌ Certaines associations sont incorrectes. Réessayez !');
+                }
+            };
+
+            const allPaired = exercise.pairs.every(pair => matches[pair.pronoun]);
+
+            return (
+                <div>
+                    <div className="grid md:grid-cols-2 gap-8 mb-8">
+                        <div className="bg-slate-50 p-6 rounded-xl">
+                            <h3 className="font-bold text-xl mb-4">Pronoms</h3>
+                            <div className="space-y-3">
+                                {exercise.pairs.map(pair => {
+                                    const matchedPair = shuffledPairs.find(p => p.uniqueId === matches[pair.pronoun]);
+                                    return (
+                                        <div 
+                                            key={pair.pronoun}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, pair.pronoun)}
+                                            className="bg-white p-4 rounded-lg border-2 border-dashed border-slate-300 min-h-[60px] flex items-center justify-between hover:border-blue-400 transition"
+                                        >
+                                            <span className="font-semibold text-lg">{pair.pronoun}</span>
+                                            {matchedPair ? (
+                                                <button
+                                                    onClick={() => removeMatch(pair.pronoun)}
+                                                    className="bg-blue-100 px-4 py-2 rounded-lg font-semibold ending hover:bg-blue-200 transition cursor-pointer"
+                                                >
+                                                    {matchedPair.ending} ✕
+                                                </button>
+                                            ) : (
+                                                <span className="text-slate-400 italic text-sm">Glissez une terminaison ici</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        
+                        <div className="bg-slate-50 p-6 rounded-xl">
+                            <h3 className="font-bold text-xl mb-4">Terminaisons</h3>
+                            <div className="space-y-3">
+                                {shuffledPairs.map((pair) => {
+                                    const isUsed = Object.values(matches).includes(pair.uniqueId);
+                                    return (
+                                        <div
+                                            key={pair.uniqueId}
+                                            draggable={!isUsed}
+                                            onDragStart={(e) => handleDragStart(e, pair)}
+                                            className={`p-4 rounded-lg font-semibold text-lg transition text-center ${
+                                                isUsed 
+                                                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                                                    : 'bg-blue-100 hover:bg-blue-200 ending cursor-move'
+                                            }`}
+                                        >
+                                            {pair.ending}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={checkAnswers}
+                        disabled={!allPaired}
+                        className="w-full py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white font-bold rounded-xl text-lg transition"
+                    >
+                        Vérifier
+                    </button>
+                </div>
+            );
+        }
+
+        // Exercice d'identification de verbes dans le texte AVEC infinitif
+        function TextInfinitifExercise({ text, verbs, onComplete }) {
+            const [foundVerbs, setFoundVerbs] = useState({});
+            const [selectedKey, setSelectedKey] = useState(null);
+            const [infinitifInput, setInfinitifInput] = useState('');
+            const [showResult, setShowResult] = useState(false);
+
+            const TARGET_COUNT = 10; // Objectif : 10 verbes
+
+            // Split sans séparer les apostrophes du mot
+            const words = text.split(/(\s+|[.,;!?])/);
+            
+            const handleWordClick = (word, idx) => {
+                // Enlever "j'" ou "J'" du début (2 caractères)
+                const cleanWord = word.toLowerCase().replace(/^j'/g, '').trim();
+                const verbData = verbs.find(v => v.verb === cleanWord);
+                const wordKey = `${cleanWord}-${idx}`;
+                
+                if (verbData && !foundVerbs[wordKey]) {
+                    setSelectedKey(wordKey);
+                    setInfinitifInput('');
+                }
+            };
+
+            const submitInfinitif = () => {
+                const [cleanWord, ] = selectedKey.split('-');
+                const verbData = verbs.find(v => v.verb === cleanWord);
+                if (verbData && infinitifInput.toLowerCase().trim() === verbData.infinitif.toLowerCase()) {
+                    setFoundVerbs({ ...foundVerbs, [selectedKey]: infinitifInput.toLowerCase().trim() });
+                    setSelectedKey(null);
+                    setInfinitifInput('');
+                } else {
+                    alert('❌ Incorrect. Réessayez !');
+                }
+            };
+
+            const checkAll = () => {
+                setShowResult(true);
+                if (onComplete) {
+                    onComplete();
+                }
+            };
+            
+            const correctCount = Object.keys(foundVerbs).length;
+            const remainingVerbs = TARGET_COUNT - correctCount;
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold text-slate-800 mb-6">
+                        Raconter une habitude dans le passé
+                    </h2>
+                    <p className="text-lg text-slate-600 mb-4">
+                        Trouve dix verbes à l'imparfait et donne leur infinitif
+                    </p>
+                    <p className="text-slate-600 mb-6 italic">
+                        (Quelque chose qui se répète)
+                    </p>
+                    
+                    <div className="bg-blue-50 p-6 rounded-xl mb-6 text-lg leading-relaxed">
+                        {words.map((word, idx) => {
+                            // Ne pas traiter les espaces et ponctuation seuls
+                            if (/^\s+$|^[.,;!?]$/.test(word)) {
+                                return <span key={idx}>{word}</span>;
+                            }
+                            
+                            const cleanWord = word.toLowerCase().replace(/^j'/g, '').trim();
+                            const isVerb = verbs.some(v => v.verb === cleanWord);
+                            const wordKey = `${cleanWord}-${idx}`;
+                            const isFound = foundVerbs[wordKey];
+                            const isSelected = selectedKey === wordKey;
+                            
+                            if (!isVerb) {
+                                return <span key={idx}>{word}</span>;
+                            }
+                            
+                            return (
+                                <span
+                                    key={idx}
+                                    onClick={() => !isFound && handleWordClick(word, idx)}
+                                    className={`cursor-pointer transition px-1 rounded ${
+                                        isFound 
+                                            ? 'bg-green-300 font-semibold cursor-default' 
+                                            : isSelected
+                                            ? 'bg-yellow-300'
+                                            : 'hover:bg-yellow-200'
+                                    }`}
+                                >
+                                    {word}
+                                </span>
+                            );
+                        })}
+                    </div>
+
+                    {selectedKey && (
+                        <div className="bg-white p-6 rounded-xl shadow-lg mb-6 border-2 border-yellow-500">
+                            <p className="text-xl font-bold mb-4">
+                                Verbe sélectionné : <span className="ending">{selectedKey.split('-')[0]}</span>
+                            </p>
+                            <p className="mb-3">Quel est son infinitif ?</p>
+                            <div className="flex gap-3">
+                                <input
+                                    type="text"
+                                    value={infinitifInput}
+                                    onChange={(e) => setInfinitifInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && submitInfinitif()}
+                                    className="flex-1 p-3 border-2 border-slate-300 rounded-lg text-lg focus:border-blue-500 focus:outline-none"
+                                    placeholder="Ex: manger"
+                                    autoFocus
+                                />
+                                <button
+                                    onClick={submitInfinitif}
+                                    className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition"
+                                >
+                                    Valider
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mb-6 text-center">
+                        <p className="text-lg">
+                            Verbes trouvés : <span className="font-bold text-blue-600">{correctCount}</span> / {TARGET_COUNT}
+                        </p>
+                    </div>
+
+                    {!showResult && correctCount === TARGET_COUNT && (
+                        <button
+                            onClick={checkAll}
+                            className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl text-lg transition animate-pulse"
+                        >
+                            🎉 Terminer l'exercice
+                        </button>
+                    )}
+                    
+                    {!showResult && correctCount > 0 && correctCount < TARGET_COUNT && (
+                        <div className="p-4 bg-blue-50 border-2 border-blue-400 rounded-xl text-center">
+                            <p className="text-lg font-semibold text-blue-700">
+                                Encore {remainingVerbs} verbe{remainingVerbs > 1 ? 's' : ''} à trouver !
+                            </p>
+                        </div>
+                    )}
+
+                    {showResult && (
+                        <div className="p-6 rounded-xl bg-green-50 border-2 border-green-500">
+                            <p className="text-3xl font-bold mb-4 text-center">🎉 Bravo !</p>
+                            <p className="text-xl mb-4 text-center">Tu as trouvé 10 verbes à l'imparfait et donné leur infinitif !</p>
+                            <p className="text-lg mb-4">Ici, on utilise l'imparfait parce que c'est "chaque été". C'est une répétition, une habitude.</p>
+                            <div className="bg-white p-4 rounded-lg">
+                                <p className="font-semibold mb-2">Les verbes que tu as trouvés :</p>
+                                <div className="grid md:grid-cols-2 gap-2">
+                                    {Object.keys(foundVerbs).map(key => {
+                                        const cleanWord = key.split('-')[0];
+                                        const verbData = verbs.find(v => v.verb === cleanWord);
+                                        return (
+                                            <div key={key} className="text-sm">
+                                                {verbData.infinitif} → <span className="ending">{verbData.verb}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Exercice d'identification de verbes dans le texte (ancienne version sans infinitif)
+        function TextIdentificationExercise({ text, verbs }) {
+            const [foundVerbs, setFoundVerbs] = useState([]);
+            const [showResult, setShowResult] = useState(false);
+
+            const words = text.split(/(\s+|[.,;!?])/);
+            
+            const handleWordClick = (word) => {
+                const cleanWord = word.toLowerCase().trim();
+                const isVerb = verbs.some(v => v.verb === cleanWord);
+                
+                if (isVerb) {
+                    if (!foundVerbs.includes(cleanWord)) {
+                        setFoundVerbs([...foundVerbs, cleanWord]);
+                    } else {
+                        setFoundVerbs(foundVerbs.filter(v => v !== cleanWord));
+                    }
+                }
+            };
+
+            const checkAnswers = () => {
+                setShowResult(true);
+            };
+
+            const allFound = verbs.every(v => foundVerbs.includes(v.verb));
+            const correctCount = foundVerbs.filter(f => verbs.some(v => v.verb === f)).length;
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold text-slate-800 mb-6">
+                        Trouvez les verbes à l'imparfait
+                    </h2>
+                    <p className="text-lg text-slate-600 mb-6">
+                        Cliquez sur les verbes conjugués à l'imparfait dans le texte ci-dessous :
+                    </p>
+                    
+                    <div className="bg-blue-50 p-6 rounded-xl mb-6 text-lg leading-relaxed">
+                        {words.map((word, idx) => {
+                            const cleanWord = word.toLowerCase().trim();
+                            const isVerb = verbs.some(v => v.verb === cleanWord);
+                            const isFound = foundVerbs.includes(cleanWord);
+                            
+                            if (!isVerb || /\s|[.,;!?]/.test(word)) {
+                                return <span key={idx}>{word}</span>;
+                            }
+                            
+                            return (
+                                <span
+                                    key={idx}
+                                    onClick={() => handleWordClick(word)}
+                                    className={`cursor-pointer transition px-1 rounded ${
+                                        isFound 
+                                            ? 'bg-green-300 font-semibold' 
+                                            : 'hover:bg-yellow-200'
+                                    }`}
+                                >
+                                    {word}
+                                </span>
+                            );
+                        })}
+                    </div>
+
+                    <div className="mb-6 text-center">
+                        <p className="text-lg">
+                            Verbes trouvés : <span className="font-bold text-blue-600">{foundVerbs.length}</span> / {verbs.length}
+                        </p>
+                    </div>
+
+                    {!showResult ? (
+                        <button
+                            onClick={checkAnswers}
+                            className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-lg transition"
+                        >
+                            Vérifier
+                        </button>
+                    ) : (
+                        <div className={`p-6 rounded-xl ${allFound ? 'bg-green-50 border-2 border-green-500' : 'bg-orange-50 border-2 border-orange-500'}`}>
+                            <p className="text-xl font-bold mb-4">
+                                {allFound ? '🎉 Parfait !' : `👍 Bon travail ! ${correctCount} / ${verbs.length} trouvés`}
+                            </p>
+                            <p className="text-lg mb-4">Ici, on utilise l'imparfait parce que c'est "chaque été". C'est une répétition, une habitude.</p>
+                            <div className="bg-white p-4 rounded-lg">
+                                <p className="font-semibold mb-2">Liste complète des verbes :</p>
+                                <div className="grid md:grid-cols-2 gap-2">
+                                    {verbs.map(v => (
+                                        <div key={v.verb} className="text-sm">
+                                            <span className="ending">{v.verb}</span> → {v.infinitif}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Exercice à trous (fill-in) avec feedback détaillé
+        function FillInExercise({ exercises, title, onComplete }) {
+            const [answers, setAnswers] = useState({});
+            const [showResults, setShowResults] = useState(false);
+            const [detailsShown, setDetailsShown] = useState({});
+            const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+
+            const handleChange = (idx, value) => {
+                setAnswers({ ...answers, [idx]: value });
+            };
+
+            const checkAnswers = () => {
+                setShowResults(true);
+                // Vérifier si toutes les réponses sont correctes
+                const correct = exercises.filter((ex, idx) => 
+                    answers[idx]?.toLowerCase().trim() === ex.correct.toLowerCase()
+                ).length;
+                if (correct === exercises.length) {
+                    // Afficher le modal après un court délai avec un message aléatoire
+                    setTimeout(() => {
+                        setShowCelebrationModal(true);
+                        if (onComplete) {
+                            onComplete();
+                        }
+                    }, 500);
+                }
+            };
+
+            const toggleDetails = (idx) => {
+                setDetailsShown({ ...detailsShown, [idx]: !detailsShown[idx] });
+            };
+
+            const correctCount = exercises.filter((ex, idx) => 
+                answers[idx]?.toLowerCase().trim() === ex.correct.toLowerCase()
+            ).length;
+
+            // Fonction pour extraire radical et terminaison
+            const getRadicalAndEnding = (verb, correct) => {
+                const endings = ['ais', 'ait', 'ions', 'iez', 'aient'];
+                for (const ending of endings) {
+                    if (correct.endsWith(ending)) {
+                        const radical = correct.slice(0, -ending.length);
+                        return { radical, ending };
+                    }
+                }
+                return { radical: correct, ending: '' };
+            };
+
+            // Fonction pour obtenir le "nous" du présent
+            const getPresentNous = (verb) => {
+                const irregulars = {
+                    'être': 'sommes',
+                    'avoir': 'avons',
+                    'aller': 'allons',
+                    'faire': 'faisons',
+                    'voir': 'voyons',
+                    'boire': 'buvons',
+                    'venir': 'venons',
+                    'prendre': 'prenons',
+                    'finir': 'finissons',
+                    'partir': 'partons',
+                    'lire': 'lisons',
+                    'revenir': 'revenons',
+                    'attendre': 'attendons',
+                    'paraître': 'paraissons',
+                    'rendre': 'rendons'
+                };
+                
+                if (irregulars[verb]) return irregulars[verb];
+                
+                // Pour les verbes réguliers
+                if (verb.endsWith('er')) return verb.slice(0, -2) + 'ons';
+                if (verb.endsWith('ir')) return verb.slice(0, -2) + 'issons';
+                if (verb.endsWith('re')) return verb.slice(0, -2) + 'ons';
+                
+                return verb + 'ons';
+            };
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold text-slate-800 mb-8">{title}</h2>
+                    
+                    <div className="space-y-4 mb-8">
+                        {exercises.map((ex, idx) => {
+                            const isCorrect = showResults && answers[idx]?.toLowerCase().trim() === ex.correct.toLowerCase();
+                            const isWrong = showResults && answers[idx] && answers[idx]?.toLowerCase().trim() !== ex.correct.toLowerCase();
+                            const { radical, ending } = getRadicalAndEnding(ex.verb, ex.correct);
+                            const presentNous = getPresentNous(ex.verb);
+                            
+                            return (
+                                <div key={idx} className="bg-slate-50 p-4 rounded-xl">
+                                    <p className="text-lg mb-3">
+                                        {ex.sentence.split('_____')[0]}
+                                        <input
+                                            type="text"
+                                            value={answers[idx] || ''}
+                                            onChange={(e) => handleChange(idx, e.target.value)}
+                                            disabled={showResults}
+                                            className={`inline-block mx-2 px-3 py-1 border-2 rounded-lg w-40 ${
+                                                isCorrect ? 'border-green-500 bg-green-50' :
+                                                isWrong ? 'border-red-500 bg-red-50' :
+                                                'border-slate-300'
+                                            }`}
+                                            placeholder="..."
+                                        />
+                                        {ex.sentence.split('_____')[1]}
+                                    </p>
+                                    {showResults && isCorrect && (
+                                        <div className="mt-3">
+                                            <p className="text-sm text-green-600 font-semibold flex items-center gap-2">
+                                                ✓ Correct !
+                                                <button 
+                                                    onClick={() => toggleDetails(idx)}
+                                                    className="text-blue-600 underline"
+                                                >
+                                                    {detailsShown[idx] ? 'Masquer' : 'Voir'} la démarche
+                                                </button>
+                                            </p>
+                                            {detailsShown[idx] && (
+                                                <div className="mt-2 bg-green-100 p-3 rounded-lg text-sm">
+                                                    <p>1. Présent avec nous : <span className="radical">{presentNous.replace('ons', '')}</span><span className="ending">ons</span></p>
+                                                    <p>2. Radical : <span className="radical">{radical}</span></p>
+                                                    <p>3. Réponse : <span className="radical">{radical}</span><span className="ending">{ending}</span></p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {showResults && isWrong && (
+                                        <p className="text-sm text-red-600 mt-2">
+                                            ✗ Réponse correcte : <span className="radical">{radical}</span><span className="ending">{ending}</span>
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {!showResults ? (
+                        <button
+                            onClick={checkAnswers}
+                            className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-lg transition"
+                        >
+                            Vérifier
+                        </button>
+                    ) : (
+                        <div>
+                            <div className={`p-6 rounded-xl mb-4 ${
+                                correctCount === exercises.length 
+                                    ? 'bg-green-50 border-2 border-green-500' 
+                                    : 'bg-blue-50 border-2 border-blue-500'
+                            }`}>
+                                <p className="text-xl font-bold mb-3">
+                                    Score : {correctCount} / {exercises.length}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setAnswers({});
+                                    setShowResults(false);
+                                    setDetailsShown({});
+                                }}
+                                className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-lg transition"
+                            >
+                                🔄 Recommencer
+                            </button>
+                        </div>
+                    )}
+                    
+                    {showCelebrationModal && (
+                        <CelebrationModal 
+                            message={ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)]}
+                            onClose={() => setShowCelebrationModal(false)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Tableau de conjugaison
+        function TableauScreen({ onBack }) {
+            const [selectedVerb, setSelectedVerb] = useState('jouer');
+            const verbData = VERBS_DATA[selectedVerb];
+
+            return (
+                <div className="min-h-screen p-8">
+                    <div className="max-w-5xl mx-auto">
+                        <button 
+                            onClick={onBack}
+                            className="mb-6 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition"
+                        >
+                            ← Retour
+                        </button>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-8">
+                            <h1 className="text-4xl font-bold text-slate-800 mb-2 text-center">
+                                Tableau de Conjugaison
+                            </h1>
+                            <p className="text-center text-slate-600 mb-8">Résumé de la conjugaison</p>
+
+                            <div className="flex flex-wrap gap-3 mb-8 justify-center">
+                                {Object.keys(VERBS_DATA).map(verb => (
+                                    <button
+                                        key={verb}
+                                        onClick={() => setSelectedVerb(verb)}
+                                        className={`px-6 py-3 rounded-lg font-semibold transition ${
+                                            selectedVerb === verb
+                                                ? 'text-white'
+                                                : 'bg-slate-100 hover:bg-slate-200'
+                                        }`}
+                                        style={{
+                                            backgroundColor: selectedVerb === verb ? VERBS_DATA[verb].color : undefined
+                                        }}
+                                    >
+                                        {VERBS_DATA[verb].name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="bg-slate-50 p-8 rounded-xl">
+                                <div className="mb-6 text-center">
+                                    <p className="text-lg text-slate-600 mb-2">Formation du radical :</p>
+                                    {selectedVerb === 'être' ? (
+                                        <div>
+                                            <p className="text-2xl font-bold mb-2">
+                                                nous <strong>sommes</strong> (pas de -ons)
+                                            </p>
+                                            <p className="text-xl">
+                                                → radical arbitraire : <span className="radical" style={{ color: verbData.color }}>ét</span>
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-2xl font-bold">
+                                            nous <span className="radical">{verbData.present.split('ons')[0]}</span><span className="ending">ons</span>
+                                            {' → radical : '}
+                                            <span className="radical" style={{ color: verbData.color }}>
+                                                {verbData.forms[0].radical}
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {verbData.forms.map((form, idx) => (
+                                        <div 
+                                            key={idx}
+                                            className="bg-white p-6 rounded-lg shadow-md card-hover"
+                                        >
+                                            <p className="text-2xl">
+                                                {form.pronoun}{' '}
+                                                <span className="radical">{form.radical}</span>
+                                                <span className="ending">{form.ending}</span>
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Confetti
+        function Confetti() {
+            return (
+                <div className="fixed inset-0 pointer-events-none z-50">
+                    {[...Array(50)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="confetti absolute"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: '-10px',
+                                width: '10px',
+                                height: '10px',
+                                backgroundColor: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FED766', '#8B5CF6'][i % 5],
+                                animationDelay: `${Math.random() * 2}s`
+                            }}
+                        />
+                    ))}
+                </div>
+            );
+        }
+
+        // Render
+        ReactDOM.render(<ImparfaitApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
