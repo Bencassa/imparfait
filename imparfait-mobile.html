@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>L'Imparfait - Version Mobile</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        body {
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        .bounce { animation: bounce 0.6s ease-in-out; }
+        .pulse { animation: pulse 0.6s ease-in-out; }
+        .confetti { animation: confetti 3s ease-out forwards; }
+        
+        .radical { color: #3B82F6; font-weight: 600; }
+        .ending { color: #EF4444; font-weight: 600; }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .badge {
+            transition: all 0.3s ease;
+        }
+        
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(-10deg); }
+            75% { transform: translateY(-20px) rotate(10deg); }
+        }
+        
+        .dancing-person {
+            animation: dance 0.6s ease-in-out infinite;
+            display: inline-block;
+        }
+        
+        /* Styles pour le système de clic mobile */
+        .clickable-item {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            min-height: 50px;
+        }
+        
+        .clickable-item.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px #3B82F6;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        .drop-zone {
+            min-height: 60px;
+            transition: all 0.2s ease;
+        }
+        
+        .drop-zone.available {
+            background-color: #DBEAFE;
+            border: 2px dashed #3B82F6;
+        }
+        
+        .drop-zone.filled {
+            background-color: #F3F4F6;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Modal de célébration
+        function CelebrationModal({ message, onClose }) {
+            if (!message) return null;
+            
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+                    <div className="bg-white rounded-3xl p-6 sm:p-12 max-w-2xl mx-auto shadow-2xl slide-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center">
+                            <div className="text-6xl sm:text-8xl mb-4 sm:mb-6">🎉</div>
+                            <h2 className="text-3xl sm:text-4xl font-bold text-green-600 mb-4 sm:mb-6">
+                                Bravo !
+                            </h2>
+                            <p className="text-xl sm:text-2xl text-slate-700 mb-6 sm:mb-8">
+                                {message}
+                            </p>
+                            <button
+                                onClick={onClose}
+                                className="px-6 sm:px-8 py-3 sm:py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl text-lg sm:text-xl transition min-h-[50px]"
+                            >
+                                Continuer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Modal de félicitation FINALE
+        function FinalCelebrationModal({ score, onClose }) {
+            return (
+                <div className="fixed inset-0 bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-3xl p-6 sm:p-12 max-w-3xl mx-auto shadow-2xl slide-in">
+                        <div className="text-center">
+                            <div className="text-7xl sm:text-9xl mb-4 sm:mb-6 dancing-person">
+                                🕺
+                            </div>
+                            
+                            <h2 className="text-3xl sm:text-5xl font-bold text-purple-600 mb-4 sm:mb-6">
+                                C'est bien !
+                            </h2>
+                            
+                            <p className="text-xl sm:text-3xl font-bold text-slate-800 mb-3 sm:mb-4">
+                                Tu as fini ce module sur l'imparfait
+                            </p>
+                            
+                            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-lg">
+                                <p className="text-lg sm:text-2xl font-bold text-white mb-2">Score total</p>
+                                <p className="text-4xl sm:text-6xl font-bold text-white">{score} points</p>
+                            </div>
+                            
+                            <p className="text-lg sm:text-2xl text-slate-700 mb-6 sm:mb-8">
+                                Prochaine étape : <span className="font-bold text-blue-600">le passé composé !</span>
+                            </p>
+                            
+                            <button
+                                onClick={onClose}
+                                className="px-8 sm:px-12 py-4 sm:py-5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold rounded-xl text-xl sm:text-2xl transition shadow-lg min-h-[50px]"
+                            >
+                                Terminer 🎉
+                            </button>
+                            
+                            <p className="text-slate-500 italic mt-6 sm:mt-8 text-sm sm:text-base">par Benoit Cassagnau</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Messages d'encouragement
+        const ENCOURAGEMENT_MESSAGES = [
+            "Bon début ! Mais attention, la suite est plus difficile...",
+            "Tu t'en sors bien jusqu'ici. Sauras-tu terminer sans faire d'erreur ?",
+            "Pas mal ! Mais garde ta concentration, le plus dur arrive...",
+            "C'est un bon score pour l'instant. Pourras-tu maintenir ce niveau ?",
+            "Bravo pour tes résultats jusqu'ici ! Prêt(e) à relever le défi jusqu'au bout ?",
+            "Tu progresses bien. Mais ne relâche pas ton effort maintenant !",
+            "Joli travail ! Montre-moi que tu peux aller jusqu'à la fin...",
+            "Ça se passe plutôt bien ! Attention à ne pas te relâcher dans la suite !"
+        ];
+
+        // Données de conjugaison
+        const VERBS_DATA = {
+            être: {
+                name: 'ÊTRE',
+                color: '#EF4444',
+                present: 'sommes',
+                forms: [
+                    { pronoun: "j'", radical: 'ét', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'ét', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'ét', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'ét', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'ét', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'ét', ending: 'aient' },
+                ]
+            },
+            jouer: {
+                name: 'JOUER',
+                color: '#3B82F6',
+                present: 'jouons',
+                forms: [
+                    { pronoun: 'je', radical: 'jou', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'jou', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'jou', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'jou', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'jou', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'jou', ending: 'aient' },
+                ]
+            },
+            finir: {
+                name: 'FINIR',
+                color: '#10B981',
+                present: 'finissons',
+                forms: [
+                    { pronoun: 'je', radical: 'finiss', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'finiss', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'finiss', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'finiss', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'finiss', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'finiss', ending: 'aient' },
+                ]
+            },
+            faire: {
+                name: 'FAIRE',
+                color: '#F59E0B',
+                present: 'faisons',
+                forms: [
+                    { pronoun: 'je', radical: 'fais', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'fais', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'fais', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'fais', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'fais', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'fais', ending: 'aient' },
+                ]
+            },
+            aller: {
+                name: 'ALLER',
+                color: '#8B5CF6',
+                present: 'allons',
+                forms: [
+                    { pronoun: 'j\'', radical: 'all', ending: 'ais' },
+                    { pronoun: 'tu', radical: 'all', ending: 'ais' },
+                    { pronoun: 'il/elle', radical: 'all', ending: 'ait' },
+                    { pronoun: 'nous', radical: 'all', ending: 'ions' },
+                    { pronoun: 'vous', radical: 'all', ending: 'iez' },
+                    { pronoun: 'ils/elles', radical: 'all', ending: 'aient' },
+                ]
+            }
+        };
+
+        // App principale
+        function ImparfaitApp() {
+            const [currentScreen, setCurrentScreen] = useState('menu');
+            const [totalScore, setTotalScore] = useState(0);
+            const [completedExercises, setCompletedExercises] = useState(new Set());
+            const [showFinalModal, setShowFinalModal] = useState(false);
+
+            const addPoints = (points, exerciseId) => {
+                setTotalScore(prev => prev + points);
+                setCompletedExercises(prev => new Set([...prev, exerciseId]));
+            };
+
+            const renderScreen = () => {
+                switch(currentScreen) {
+                    case 'menu':
+                        return <MenuScreen onNavigate={setCurrentScreen} totalScore={totalScore} completedExercises={completedExercises} />;
+                    case 'tutorial':
+                        return <TutorialScreen onBack={() => setCurrentScreen('menu')} />;
+                    case 'drag-pronoms':
+                        return <DragDropPronoms onBack={() => setCurrentScreen('menu')} onComplete={addPoints} />;
+                    case 'drag-endings':
+                        return <DragDropEndings onBack={() => setCurrentScreen('menu')} onComplete={addPoints} />;
+                    case 'quiz':
+                        return <QuizScreen onBack={() => setCurrentScreen('menu')} onComplete={addPoints} />;
+                    case 'tableau':
+                        return <TableauScreen onBack={() => setCurrentScreen('menu')} />;
+                    default:
+                        return <MenuScreen onNavigate={setCurrentScreen} totalScore={totalScore} completedExercises={completedExercises} />;
+                }
+            };
+
+            useEffect(() => {
+                if (completedExercises.size >= 3 && !showFinalModal) {
+                    setShowFinalModal(true);
+                }
+            }, [completedExercises]);
+
+            return (
+                <>
+                    {renderScreen()}
+                    {showFinalModal && (
+                        <FinalCelebrationModal 
+                            score={totalScore}
+                            onClose={() => setShowFinalModal(false)}
+                        />
+                    )}
+                </>
+            );
+        }
+
+        // Écran Menu
+        function MenuScreen({ onNavigate, totalScore, completedExercises }) {
+            const exercises = [
+                { id: 'tutorial', title: 'Tutoriel', icon: '📚', description: 'Apprends les bases', points: 0, screen: 'tutorial' },
+                { id: 'drag-pronoms', title: 'Exercice 1', icon: '👤', description: 'Place les pronoms', points: 10, screen: 'drag-pronoms' },
+                { id: 'drag-endings', title: 'Exercice 2', icon: '📝', description: 'Place les terminaisons', points: 20, screen: 'drag-endings' },
+                { id: 'quiz', title: 'Quiz Final', icon: '🎯', description: 'Teste tes connaissances', points: 30, screen: 'quiz' },
+                { id: 'tableau', title: 'Tableau', icon: '📊', description: 'Résumé', points: 0, screen: 'tableau' }
+            ];
+
+            return (
+                <div className="min-h-screen p-4 sm:p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="text-center mb-6 sm:mb-8">
+                            <h1 className="text-4xl sm:text-6xl font-bold text-slate-800 mb-2 sm:mb-4">
+                                L'Imparfait
+                            </h1>
+                            <p className="text-lg sm:text-2xl text-slate-600">Apprends à conjuguer à l'imparfait</p>
+                            
+                            <div className="mt-4 sm:mt-6 inline-block bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full px-6 sm:px-8 py-3 sm:py-4 shadow-lg">
+                                <p className="text-xl sm:text-2xl font-bold text-white">
+                                    🏆 Score : {totalScore} points
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:gap-6">
+                            {exercises.map(exercise => (
+                                <button
+                                    key={exercise.id}
+                                    onClick={() => onNavigate(exercise.screen)}
+                                    className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 text-left card-hover min-h-[80px] sm:min-h-0"
+                                >
+                                    <div className="flex items-center gap-3 sm:gap-4">
+                                        <div className="text-4xl sm:text-5xl">{exercise.icon}</div>
+                                        <div className="flex-1">
+                                            <h3 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1">
+                                                {exercise.title}
+                                            </h3>
+                                            <p className="text-base sm:text-lg text-slate-600">{exercise.description}</p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            {exercise.points > 0 && (
+                                                <div className="bg-blue-100 text-blue-700 px-3 sm:px-4 py-1 sm:py-2 rounded-full text-sm sm:text-base font-semibold">
+                                                    +{exercise.points} pts
+                                                </div>
+                                            )}
+                                            {completedExercises.has(exercise.id) && (
+                                                <div className="text-2xl sm:text-3xl">✅</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Tutoriel
+        function TutorialScreen({ onBack }) {
+            const [currentStep, setCurrentStep] = useState(0);
+
+            const steps = [
+                {
+                    title: "Qu'est-ce que l'imparfait ?",
+                    content: (
+                        <div className="space-y-4 sm:space-y-6">
+                            <p className="text-lg sm:text-xl text-slate-700">
+                                L'imparfait est un temps du passé utilisé pour :
+                            </p>
+                            <ul className="space-y-3 sm:space-y-4 text-base sm:text-lg text-slate-700">
+                                <li className="flex gap-3">
+                                    <span className="text-2xl">📖</span>
+                                    <span>Décrire une situation dans le passé</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="text-2xl">🔄</span>
+                                    <span>Parler d'une habitude passée</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="text-2xl">⏳</span>
+                                    <span>Exprimer une action en cours dans le passé</span>
+                                </li>
+                            </ul>
+                        </div>
+                    )
+                },
+                {
+                    title: "Comment former l'imparfait ?",
+                    content: (
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="bg-blue-50 p-4 sm:p-6 rounded-xl">
+                                <p className="text-xl sm:text-2xl font-bold text-blue-800 mb-3 sm:mb-4">
+                                    Étape 1 : Trouve le radical
+                                </p>
+                                <p className="text-base sm:text-lg text-slate-700 mb-2">
+                                    Prends le verbe au présent avec "nous"
+                                </p>
+                                <p className="text-lg sm:text-xl font-semibold">
+                                    nous jou<span className="text-red-500">ons</span> → radical : <span className="radical">jou</span>
+                                </p>
+                            </div>
+
+                            <div className="bg-red-50 p-4 sm:p-6 rounded-xl">
+                                <p className="text-xl sm:text-2xl font-bold text-red-800 mb-3 sm:mb-4">
+                                    Étape 2 : Ajoute la terminaison
+                                </p>
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4 text-base sm:text-lg">
+                                    <div>je → <span className="ending">ais</span></div>
+                                    <div>nous → <span className="ending">ions</span></div>
+                                    <div>tu → <span className="ending">ais</span></div>
+                                    <div>vous → <span className="ending">iez</span></div>
+                                    <div>il/elle → <span className="ending">ait</span></div>
+                                    <div>ils/elles → <span className="ending">aient</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "Exemple complet",
+                    content: (
+                        <div className="space-y-4 sm:space-y-6">
+                            <p className="text-lg sm:text-xl text-slate-700 font-semibold mb-4">
+                                Conjuguons le verbe JOUER :
+                            </p>
+                            <div className="grid gap-3 sm:gap-4">
+                                {[
+                                    { pronoun: 'je', form: 'jouais' },
+                                    { pronoun: 'tu', form: 'jouais' },
+                                    { pronoun: 'il/elle', form: 'jouait' },
+                                    { pronoun: 'nous', form: 'jouions' },
+                                    { pronoun: 'vous', form: 'jouiez' },
+                                    { pronoun: 'ils/elles', form: 'jouaient' },
+                                ].map((item, idx) => (
+                                    <div key={idx} className="bg-white p-3 sm:p-4 rounded-lg shadow text-lg sm:text-xl">
+                                        {item.pronoun} <span className="radical">jou</span><span className="ending">{item.form.replace('jou', '')}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "Exception : ÊTRE",
+                    content: (
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="bg-yellow-50 p-4 sm:p-6 rounded-xl border-2 border-yellow-300">
+                                <p className="text-xl sm:text-2xl font-bold text-yellow-800 mb-3 sm:mb-4">
+                                    ⚠️ Attention !
+                                </p>
+                                <p className="text-base sm:text-lg text-slate-700 mb-3 sm:mb-4">
+                                    Le verbe ÊTRE ne suit pas la règle normale :
+                                </p>
+                                <p className="text-lg sm:text-xl font-semibold mb-2">
+                                    nous sommes → radical arbitraire : <span className="radical">ét</span>
+                                </p>
+                            </div>
+
+                            <div className="grid gap-3 sm:gap-4">
+                                {[
+                                    { pronoun: "j'", form: 'étais' },
+                                    { pronoun: 'tu', form: 'étais' },
+                                    { pronoun: 'il/elle', form: 'était' },
+                                    { pronoun: 'nous', form: 'étions' },
+                                    { pronoun: 'vous', form: 'étiez' },
+                                    { pronoun: 'ils/elles', form: 'étaient' },
+                                ].map((item, idx) => (
+                                    <div key={idx} className="bg-white p-3 sm:p-4 rounded-lg shadow text-lg sm:text-xl">
+                                        {item.pronoun} <span className="radical">ét</span><span className="ending">{item.form.replace('ét', '')}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )
+                }
+            ];
+
+            return (
+                <div className="min-h-screen p-4 sm:p-8">
+                    <div className="max-w-3xl mx-auto">
+                        <button 
+                            onClick={onBack}
+                            className="mb-4 sm:mb-6 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-base sm:text-lg min-h-[50px]"
+                        >
+                            ← Retour
+                        </button>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                            <div className="mb-6 sm:mb-8">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                                        {steps[currentStep].title}
+                                    </h2>
+                                    <span className="text-base sm:text-lg text-slate-500">
+                                        {currentStep + 1} / {steps.length}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-slate-200 rounded-full h-2 sm:h-3">
+                                    <div 
+                                        className="bg-blue-500 h-2 sm:h-3 rounded-full transition-all duration-300"
+                                        style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mb-6 sm:mb-8 slide-in">
+                                {steps[currentStep].content}
+                            </div>
+
+                            <div className="flex gap-3 sm:gap-4">
+                                {currentStep > 0 && (
+                                    <button
+                                        onClick={() => setCurrentStep(prev => prev - 1)}
+                                        className="flex-1 py-3 sm:py-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                    >
+                                        ← Précédent
+                                    </button>
+                                )}
+                                {currentStep < steps.length - 1 ? (
+                                    <button
+                                        onClick={() => setCurrentStep(prev => prev + 1)}
+                                        className="flex-1 py-3 sm:py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                    >
+                                        Suivant →
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={onBack}
+                                        className="flex-1 py-3 sm:py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                    >
+                                        Terminé ✓
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Exercice 1 : Placer les pronoms (avec système de clic)
+        function DragDropPronoms({ onBack, onComplete }) {
+            const [selectedItem, setSelectedItem] = useState(null);
+            const [answers, setAnswers] = useState({});
+            const [showResults, setShowResults] = useState(false);
+            const [availablePronouns, setAvailablePronouns] = useState([
+                'je', 'tu', 'il/elle', 'nous', 'vous', 'ils/elles'
+            ]);
+            const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+
+            const exercises = [
+                { id: 1, ending: 'ais', correctPronoun: 'je' },
+                { id: 2, ending: 'ais', correctPronoun: 'tu' },
+                { id: 3, ending: 'ait', correctPronoun: 'il/elle' },
+                { id: 4, ending: 'ions', correctPronoun: 'nous' },
+                { id: 5, ending: 'iez', correctPronoun: 'vous' },
+                { id: 6, ending: 'aient', correctPronoun: 'ils/elles' },
+            ];
+
+            const handleItemClick = (pronoun) => {
+                if (showResults) return;
+                if (selectedItem === pronoun) {
+                    setSelectedItem(null); // Désélectionner
+                } else {
+                    setSelectedItem(pronoun);
+                }
+            };
+
+            const handleZoneClick = (exerciseId) => {
+                if (!selectedItem || showResults) return;
+
+                // Si la zone a déjà une réponse, la retirer
+                if (answers[exerciseId]) {
+                    setAvailablePronouns(prev => [...prev, answers[exerciseId]]);
+                }
+
+                // Placer le pronom sélectionné
+                setAnswers(prev => ({ ...prev, [exerciseId]: selectedItem }));
+                setAvailablePronouns(prev => prev.filter(p => p !== selectedItem));
+                setSelectedItem(null);
+            };
+
+            const handleAnswerRemove = (exerciseId) => {
+                if (showResults) return;
+                const pronoun = answers[exerciseId];
+                if (pronoun) {
+                    setAvailablePronouns(prev => [...prev, pronoun]);
+                    const newAnswers = { ...answers };
+                    delete newAnswers[exerciseId];
+                    setAnswers(newAnswers);
+                }
+            };
+
+            const checkAnswers = () => {
+                setShowResults(true);
+                const correctCount = exercises.filter(ex => answers[ex.id] === ex.correctPronoun).length;
+                if (correctCount === exercises.length) {
+                    setShowCelebrationModal(true);
+                    setTimeout(() => {
+                        onComplete(10, 'drag-pronoms');
+                    }, 500);
+                }
+            };
+
+            const correctCount = exercises.filter(ex => answers[ex.id] === ex.correctPronoun).length;
+
+            return (
+                <div className="min-h-screen p-4 sm:p-8">
+                    <div className="max-w-3xl mx-auto">
+                        <button 
+                            onClick={onBack}
+                            className="mb-4 sm:mb-6 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-base sm:text-lg min-h-[50px]"
+                        >
+                            ← Retour
+                        </button>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                            <div className="text-center mb-6 sm:mb-8">
+                                <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2 sm:mb-3">
+                                    Exercice 1 : Les Pronoms
+                                </h2>
+                                <p className="text-base sm:text-lg text-slate-600">
+                                    Clique sur un pronom puis sur la case correspondante
+                                </p>
+                            </div>
+
+                            {/* Pronoms disponibles */}
+                            <div className="mb-6 sm:mb-8">
+                                <p className="text-base sm:text-lg font-semibold text-slate-700 mb-3 sm:mb-4">
+                                    Pronoms disponibles :
+                                </p>
+                                <div className="flex flex-wrap gap-2 sm:gap-3">
+                                    {availablePronouns.map(pronoun => (
+                                        <button
+                                            key={pronoun}
+                                            onClick={() => handleItemClick(pronoun)}
+                                            className={`clickable-item px-4 sm:px-6 py-3 sm:py-4 bg-blue-100 border-2 border-blue-300 rounded-xl font-bold text-base sm:text-lg ${
+                                                selectedItem === pronoun ? 'selected' : ''
+                                            }`}
+                                        >
+                                            {pronoun}
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedItem && (
+                                    <p className="mt-3 text-blue-600 font-semibold text-base sm:text-lg">
+                                        ✓ "{selectedItem}" sélectionné - Clique sur une case ci-dessous
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Zones de dépôt */}
+                            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                                {exercises.map(exercise => {
+                                    const isCorrect = answers[exercise.id] === exercise.correctPronoun;
+                                    const isWrong = showResults && answers[exercise.id] && !isCorrect;
+                                    
+                                    return (
+                                        <div
+                                            key={exercise.id}
+                                            className={`p-4 sm:p-6 rounded-xl border-2 ${
+                                                showResults
+                                                    ? isCorrect
+                                                        ? 'bg-green-50 border-green-500'
+                                                        : isWrong
+                                                        ? 'bg-red-50 border-red-500'
+                                                        : 'bg-slate-50 border-slate-300'
+                                                    : answers[exercise.id]
+                                                    ? 'drop-zone filled'
+                                                    : selectedItem
+                                                    ? 'drop-zone available'
+                                                    : 'border-slate-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div 
+                                                    onClick={() => !answers[exercise.id] && handleZoneClick(exercise.id)}
+                                                    className="flex-1 cursor-pointer"
+                                                >
+                                                    {answers[exercise.id] ? (
+                                                        <div className="flex items-center gap-2 sm:gap-3">
+                                                            <span className="text-xl sm:text-2xl font-bold text-blue-600">
+                                                                {answers[exercise.id]}
+                                                            </span>
+                                                            <span className="text-xl sm:text-2xl">
+                                                                jou<span className="ending">{exercise.ending}</span>
+                                                            </span>
+                                                            {!showResults && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleAnswerRemove(exercise.id);
+                                                                    }}
+                                                                    className="ml-auto text-red-500 hover:text-red-700 text-2xl min-h-[40px] min-w-[40px]"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-lg sm:text-xl text-slate-400 text-center py-2">
+                                                            {selectedItem ? '👆 Clique ici' : '___'} jou<span className="ending">{exercise.ending}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {showResults && (
+                                                    <div className="text-2xl sm:text-3xl">
+                                                        {isCorrect ? '✓' : isWrong ? '✗' : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {showResults && isWrong && (
+                                                <p className="text-sm sm:text-base text-red-600 mt-2">
+                                                    Réponse correcte : {exercise.correctPronoun}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {!showResults ? (
+                                <button
+                                    onClick={checkAnswers}
+                                    disabled={Object.keys(answers).length !== exercises.length}
+                                    className="w-full py-3 sm:py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                >
+                                    {Object.keys(answers).length === exercises.length ? 'Vérifier' : `Place tous les pronoms (${Object.keys(answers).length}/${exercises.length})`}
+                                </button>
+                            ) : (
+                                <div>
+                                    <div className={`p-4 sm:p-6 rounded-xl mb-4 ${
+                                        correctCount === exercises.length 
+                                            ? 'bg-green-50 border-2 border-green-500' 
+                                            : 'bg-blue-50 border-2 border-blue-500'
+                                    }`}>
+                                        <p className="text-xl sm:text-2xl font-bold mb-2">
+                                            Score : {correctCount} / {exercises.length}
+                                        </p>
+                                        {correctCount === exercises.length && (
+                                            <p className="text-green-600 font-semibold text-base sm:text-lg">
+                                                🎉 Parfait ! +10 points
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setAnswers({});
+                                            setShowResults(false);
+                                            setAvailablePronouns(['je', 'tu', 'il/elle', 'nous', 'vous', 'ils/elles']);
+                                            setSelectedItem(null);
+                                        }}
+                                        className="w-full py-3 sm:py-4 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                    >
+                                        🔄 Recommencer
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {showCelebrationModal && (
+                        <CelebrationModal 
+                            message={ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)]}
+                            onClose={() => setShowCelebrationModal(false)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Exercice 2 : Placer les terminaisons (avec système de clic)
+        function DragDropEndings({ onBack, onComplete }) {
+            const [selectedItem, setSelectedItem] = useState(null);
+            const [answers, setAnswers] = useState({});
+            const [showResults, setShowResults] = useState(false);
+            const [availableEndings, setAvailableEndings] = useState([
+                'ais', 'ais', 'ait', 'ions', 'iez', 'aient'
+            ]);
+            const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+
+            const exercises = [
+                { id: 1, pronoun: 'je', radical: 'jou', correctEnding: 'ais' },
+                { id: 2, pronoun: 'tu', radical: 'jou', correctEnding: 'ais' },
+                { id: 3, pronoun: 'il/elle', radical: 'jou', correctEnding: 'ait' },
+                { id: 4, pronoun: 'nous', radical: 'jou', correctEnding: 'ions' },
+                { id: 5, pronoun: 'vous', radical: 'jou', correctEnding: 'iez' },
+                { id: 6, pronoun: 'ils/elles', radical: 'jou', correctEnding: 'aient' },
+            ];
+
+            const handleItemClick = (ending, index) => {
+                if (showResults) return;
+                const itemKey = `${ending}-${index}`;
+                if (selectedItem === itemKey) {
+                    setSelectedItem(null);
+                } else {
+                    setSelectedItem(itemKey);
+                }
+            };
+
+            const handleZoneClick = (exerciseId) => {
+                if (!selectedItem || showResults) return;
+
+                // Si la zone a déjà une réponse, la retirer
+                if (answers[exerciseId]) {
+                    setAvailableEndings(prev => [...prev, answers[exerciseId]]);
+                }
+
+                // Extraire la terminaison du selectedItem
+                const ending = selectedItem.split('-')[0];
+                
+                // Placer la terminaison
+                setAnswers(prev => ({ ...prev, [exerciseId]: ending }));
+                setAvailableEndings(prev => {
+                    const idx = prev.indexOf(ending);
+                    if (idx > -1) {
+                        return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+                    }
+                    return prev;
+                });
+                setSelectedItem(null);
+            };
+
+            const handleAnswerRemove = (exerciseId) => {
+                if (showResults) return;
+                const ending = answers[exerciseId];
+                if (ending) {
+                    setAvailableEndings(prev => [...prev, ending]);
+                    const newAnswers = { ...answers };
+                    delete newAnswers[exerciseId];
+                    setAnswers(newAnswers);
+                }
+            };
+
+            const checkAnswers = () => {
+                setShowResults(true);
+                const correctCount = exercises.filter(ex => answers[ex.id] === ex.correctEnding).length;
+                if (correctCount === exercises.length) {
+                    setShowCelebrationModal(true);
+                    setTimeout(() => {
+                        onComplete(20, 'drag-endings');
+                    }, 500);
+                }
+            };
+
+            const correctCount = exercises.filter(ex => answers[ex.id] === ex.correctEnding).length;
+
+            return (
+                <div className="min-h-screen p-4 sm:p-8">
+                    <div className="max-w-3xl mx-auto">
+                        <button 
+                            onClick={onBack}
+                            className="mb-4 sm:mb-6 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-base sm:text-lg min-h-[50px]"
+                        >
+                            ← Retour
+                        </button>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                            <div className="text-center mb-6 sm:mb-8">
+                                <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2 sm:mb-3">
+                                    Exercice 2 : Les Terminaisons
+                                </h2>
+                                <p className="text-base sm:text-lg text-slate-600">
+                                    Clique sur une terminaison puis sur la case correspondante
+                                </p>
+                            </div>
+
+                            {/* Terminaisons disponibles */}
+                            <div className="mb-6 sm:mb-8">
+                                <p className="text-base sm:text-lg font-semibold text-slate-700 mb-3 sm:mb-4">
+                                    Terminaisons disponibles :
+                                </p>
+                                <div className="flex flex-wrap gap-2 sm:gap-3">
+                                    {availableEndings.map((ending, index) => {
+                                        const itemKey = `${ending}-${index}`;
+                                        return (
+                                            <button
+                                                key={itemKey}
+                                                onClick={() => handleItemClick(ending, index)}
+                                                className={`clickable-item px-4 sm:px-6 py-3 sm:py-4 bg-red-100 border-2 border-red-300 rounded-xl font-bold text-base sm:text-lg ${
+                                                    selectedItem === itemKey ? 'selected' : ''
+                                                }`}
+                                            >
+                                                {ending}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {selectedItem && (
+                                    <p className="mt-3 text-red-600 font-semibold text-base sm:text-lg">
+                                        ✓ "{selectedItem.split('-')[0]}" sélectionné - Clique sur une case ci-dessous
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Zones de dépôt */}
+                            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                                {exercises.map(exercise => {
+                                    const isCorrect = answers[exercise.id] === exercise.correctEnding;
+                                    const isWrong = showResults && answers[exercise.id] && !isCorrect;
+                                    
+                                    return (
+                                        <div
+                                            key={exercise.id}
+                                            className={`p-4 sm:p-6 rounded-xl border-2 ${
+                                                showResults
+                                                    ? isCorrect
+                                                        ? 'bg-green-50 border-green-500'
+                                                        : isWrong
+                                                        ? 'bg-red-50 border-red-500'
+                                                        : 'bg-slate-50 border-slate-300'
+                                                    : answers[exercise.id]
+                                                    ? 'drop-zone filled'
+                                                    : selectedItem
+                                                    ? 'drop-zone available'
+                                                    : 'border-slate-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div 
+                                                    onClick={() => !answers[exercise.id] && handleZoneClick(exercise.id)}
+                                                    className="flex-1 cursor-pointer"
+                                                >
+                                                    <div className="flex items-center gap-2 sm:gap-3">
+                                                        <span className="text-xl sm:text-2xl">
+                                                            {exercise.pronoun}
+                                                        </span>
+                                                        <span className="text-xl sm:text-2xl">
+                                                            <span className="radical">{exercise.radical}</span>
+                                                            {answers[exercise.id] ? (
+                                                                <span className="ending font-bold">{answers[exercise.id]}</span>
+                                                            ) : (
+                                                                <span className="text-slate-400">
+                                                                    {selectedItem ? '👆' : '___'}
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                        {answers[exercise.id] && !showResults && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleAnswerRemove(exercise.id);
+                                                                }}
+                                                                className="ml-auto text-red-500 hover:text-red-700 text-2xl min-h-[40px] min-w-[40px]"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {showResults && (
+                                                    <div className="text-2xl sm:text-3xl">
+                                                        {isCorrect ? '✓' : isWrong ? '✗' : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {showResults && isWrong && (
+                                                <p className="text-sm sm:text-base text-red-600 mt-2">
+                                                    Réponse correcte : {exercise.correctEnding}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {!showResults ? (
+                                <button
+                                    onClick={checkAnswers}
+                                    disabled={Object.keys(answers).length !== exercises.length}
+                                    className="w-full py-3 sm:py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                >
+                                    {Object.keys(answers).length === exercises.length ? 'Vérifier' : `Place toutes les terminaisons (${Object.keys(answers).length}/${exercises.length})`}
+                                </button>
+                            ) : (
+                                <div>
+                                    <div className={`p-4 sm:p-6 rounded-xl mb-4 ${
+                                        correctCount === exercises.length 
+                                            ? 'bg-green-50 border-2 border-green-500' 
+                                            : 'bg-blue-50 border-2 border-blue-500'
+                                    }`}>
+                                        <p className="text-xl sm:text-2xl font-bold mb-2">
+                                            Score : {correctCount} / {exercises.length}
+                                        </p>
+                                        {correctCount === exercises.length && (
+                                            <p className="text-green-600 font-semibold text-base sm:text-lg">
+                                                🎉 Parfait ! +20 points
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setAnswers({});
+                                            setShowResults(false);
+                                            setAvailableEndings(['ais', 'ais', 'ait', 'ions', 'iez', 'aient']);
+                                            setSelectedItem(null);
+                                        }}
+                                        className="w-full py-3 sm:py-4 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                    >
+                                        🔄 Recommencer
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {showCelebrationModal && (
+                        <CelebrationModal 
+                            message={ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)]}
+                            onClose={() => setShowCelebrationModal(false)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Quiz Final
+        function QuizScreen({ onBack, onComplete }) {
+            const [answers, setAnswers] = useState({});
+            const [showResults, setShowResults] = useState(false);
+            const [detailsShown, setDetailsShown] = useState({});
+            const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+
+            const exercises = [
+                { id: 1, verb: 'jouer', pronoun: 'je', radical: 'jou', ending: 'ais' },
+                { id: 2, verb: 'finir', pronoun: 'tu', radical: 'finiss', ending: 'ais' },
+                { id: 3, verb: 'être', pronoun: 'il', radical: 'ét', ending: 'ait' },
+                { id: 4, verb: 'aller', pronoun: 'nous', radical: 'all', ending: 'ions' },
+                { id: 5, verb: 'faire', pronoun: 'vous', radical: 'fais', ending: 'iez' },
+                { id: 6, verb: 'jouer', pronoun: 'elles', radical: 'jou', ending: 'aient' },
+            ];
+
+            const checkAnswers = () => {
+                setShowResults(true);
+                const correctCount = exercises.filter(ex => answers[ex.id] === `${ex.radical}${ex.ending}`).length;
+                if (correctCount === exercises.length) {
+                    setShowCelebrationModal(true);
+                    setTimeout(() => {
+                        onComplete(30, 'quiz');
+                    }, 500);
+                }
+            };
+
+            const correctCount = exercises.filter(ex => answers[ex.id] === `${ex.radical}${ex.ending}`).length;
+
+            return (
+                <div className="min-h-screen p-4 sm:p-8">
+                    <div className="max-w-3xl mx-auto">
+                        <button 
+                            onClick={onBack}
+                            className="mb-4 sm:mb-6 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-base sm:text-lg min-h-[50px]"
+                        >
+                            ← Retour
+                        </button>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                            <div className="text-center mb-6 sm:mb-8">
+                                <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2 sm:mb-3">
+                                    Quiz Final
+                                </h2>
+                                <p className="text-base sm:text-lg text-slate-600">
+                                    Conjugue les verbes à l'imparfait
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                                {exercises.map(({ id, verb, pronoun, radical, ending }) => {
+                                    const userAnswer = answers[id] || '';
+                                    const correctAnswer = `${radical}${ending}`;
+                                    const isCorrect = userAnswer === correctAnswer;
+                                    const isWrong = showResults && userAnswer && !isCorrect;
+
+                                    return (
+                                        <div
+                                            key={id}
+                                            className={`p-4 sm:p-6 rounded-xl border-2 ${
+                                                showResults
+                                                    ? isCorrect
+                                                        ? 'bg-green-50 border-green-500'
+                                                        : isWrong
+                                                        ? 'bg-red-50 border-red-500'
+                                                        : 'bg-slate-50 border-slate-300'
+                                                    : 'border-slate-300'
+                                            }`}
+                                        >
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                                                <label className="text-lg sm:text-xl font-semibold min-w-[120px]">
+                                                    {pronoun} ({verb})
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={userAnswer}
+                                                    onChange={(e) => setAnswers(prev => ({ ...prev, [id]: e.target.value.toLowerCase() }))}
+                                                    disabled={showResults}
+                                                    className="flex-1 px-4 py-3 border-2 border-slate-300 rounded-lg text-lg sm:text-xl focus:outline-none focus:border-blue-500 disabled:bg-slate-100 min-h-[50px]"
+                                                    placeholder="Écris la conjugaison"
+                                                />
+                                                {showResults && (
+                                                    <div className="text-2xl sm:text-3xl">
+                                                        {isCorrect ? '✓' : isWrong ? '✗' : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {showResults && isCorrect && (
+                                                <div className="mt-3 sm:mt-4">
+                                                    <button
+                                                        onClick={() => setDetailsShown(prev => ({ ...prev, [id]: !prev[id] }))}
+                                                        className="text-blue-600 hover:text-blue-800 font-semibold text-sm sm:text-base"
+                                                    >
+                                                        {detailsShown[id] ? '▼ Masquer les étapes' : '▶ Voir les étapes'}
+                                                    </button>
+                                                    {detailsShown[id] && (
+                                                        <div className="mt-3 p-3 sm:p-4 bg-blue-50 rounded-lg text-sm sm:text-base space-y-1">
+                                                            <p>1. Présent : nous {verb === 'être' ? 'sommes' : VERBS_DATA[verb]?.present}</p>
+                                                            <p>2. Radical : <span className="radical">{radical}</span></p>
+                                                            <p>3. Réponse : <span className="radical">{radical}</span><span className="ending">{ending}</span></p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {showResults && isWrong && (
+                                                <p className="text-sm sm:text-base text-red-600 mt-2">
+                                                    ✗ Réponse correcte : <span className="radical">{radical}</span><span className="ending">{ending}</span>
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {!showResults ? (
+                                <button
+                                    onClick={checkAnswers}
+                                    className="w-full py-3 sm:py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                >
+                                    Vérifier
+                                </button>
+                            ) : (
+                                <div>
+                                    <div className={`p-4 sm:p-6 rounded-xl mb-4 ${
+                                        correctCount === exercises.length 
+                                            ? 'bg-green-50 border-2 border-green-500' 
+                                            : 'bg-blue-50 border-2 border-blue-500'
+                                    }`}>
+                                        <p className="text-xl sm:text-2xl font-bold mb-2">
+                                            Score : {correctCount} / {exercises.length}
+                                        </p>
+                                        {correctCount === exercises.length && (
+                                            <p className="text-green-600 font-semibold text-base sm:text-lg">
+                                                🎉 Parfait ! +30 points
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setAnswers({});
+                                            setShowResults(false);
+                                            setDetailsShown({});
+                                        }}
+                                        className="w-full py-3 sm:py-4 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl text-base sm:text-lg transition min-h-[50px]"
+                                    >
+                                        🔄 Recommencer
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {showCelebrationModal && (
+                        <CelebrationModal 
+                            message={ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)]}
+                            onClose={() => setShowCelebrationModal(false)}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Tableau de conjugaison
+        function TableauScreen({ onBack }) {
+            const [selectedVerb, setSelectedVerb] = useState('jouer');
+            const verbData = VERBS_DATA[selectedVerb];
+
+            return (
+                <div className="min-h-screen p-4 sm:p-8">
+                    <div className="max-w-5xl mx-auto">
+                        <button 
+                            onClick={onBack}
+                            className="mb-4 sm:mb-6 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-base sm:text-lg min-h-[50px]"
+                        >
+                            ← Retour
+                        </button>
+
+                        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2 text-center">
+                                Tableau de Conjugaison
+                            </h1>
+                            <p className="text-center text-slate-600 mb-6 sm:mb-8 text-base sm:text-lg">Résumé de la conjugaison</p>
+
+                            <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8 justify-center">
+                                {Object.keys(VERBS_DATA).map(verb => (
+                                    <button
+                                        key={verb}
+                                        onClick={() => setSelectedVerb(verb)}
+                                        className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition text-base sm:text-lg min-h-[50px] ${
+                                            selectedVerb === verb
+                                                ? 'text-white'
+                                                : 'bg-slate-100 hover:bg-slate-200'
+                                        }`}
+                                        style={{
+                                            backgroundColor: selectedVerb === verb ? VERBS_DATA[verb].color : undefined
+                                        }}
+                                    >
+                                        {VERBS_DATA[verb].name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="bg-slate-50 p-4 sm:p-8 rounded-xl">
+                                <div className="mb-4 sm:mb-6 text-center">
+                                    <p className="text-base sm:text-lg text-slate-600 mb-2">Formation du radical :</p>
+                                    {selectedVerb === 'être' ? (
+                                        <div>
+                                            <p className="text-xl sm:text-2xl font-bold mb-2">
+                                                nous <strong>sommes</strong> (pas de -ons)
+                                            </p>
+                                            <p className="text-lg sm:text-xl">
+                                                → radical arbitraire : <span className="radical" style={{ color: verbData.color }}>ét</span>
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xl sm:text-2xl font-bold">
+                                            nous <span className="radical">{verbData.present.split('ons')[0]}</span><span className="ending">ons</span>
+                                            {' → radical : '}
+                                            <span className="radical" style={{ color: verbData.color }}>
+                                                {verbData.forms[0].radical}
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="grid gap-3 sm:gap-6">
+                                    {verbData.forms.map((form, idx) => (
+                                        <div 
+                                            key={idx}
+                                            className="bg-white p-4 sm:p-6 rounded-lg shadow-md card-hover"
+                                        >
+                                            <p className="text-xl sm:text-2xl">
+                                                {form.pronoun}{' '}
+                                                <span className="radical">{form.radical}</span>
+                                                <span className="ending">{form.ending}</span>
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render
+        ReactDOM.render(<ImparfaitApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
